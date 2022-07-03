@@ -29,6 +29,13 @@ function mouseDragged() {
   sendmouse(mouseX, mouseY);
 }
 
+function keyPressed() {
+  if (key==' '){
+    var data = {x: 'hello world'}
+    socket.emit('try1', data);
+  }
+}
+
 function sendmouse(xpos, ypos) {
   console.log("sendmouse: " + xpos + " " + ypos);
   

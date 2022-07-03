@@ -7,3 +7,4 @@ packages
 .env*
 npm-debug.log*
 package-lock.json
+config.json

@@ -1,45 +1,42 @@
 
-var socket;
+var socket = io.connect();
 
 function setup() {
-  createCanvas(500, 500);
+  createCanvas(1280, 1024);
   background(0);
   
-  socket = io.connect();  
-  
-  socket.on('mouse2',
+  socket.on('creation',
     function(data) {
-      console.log("Got: " + data.x + " " + data.y);
-      fill(0,0,255);
-      noStroke();
-      ellipse(data.x,data.y,80,80);
+      console.log(data);
+      console.log(data.creation);
+      console.log(data.mouse);
+
+      var pimg = new Image();
+      pimg.src='data:image/jpeg;base64,'+data.creation.data;
+      pimg.onload = function() {
+        var img = createImage(pimg.width, pimg.height);
+        img.drawingContext.drawImage(pimg, 0, 0);
+        image(img, data.mouse.x, data.mouse.y);
+      }
     }
   );
 
 }
 
 function draw() {
-  ellipse(100, 100, 100, 100);
+  
 }
 
 function mouseDragged() {
-  fill(255);
-  noStroke();
-  ellipse(mouseX, mouseY, 80, 80);
-  sendmouse(mouseX, mouseY);
+  
 }
 
 function keyPressed() {
   if (key==' '){
-    var data = {x: 'hello world'}
-    socket.emit('try1', data);
+    var data = {
+      text_input: 'a dinosaur with a mohawk',
+      mouse: {x: mouseX, y: mouseY}    
+    }
+    socket.emit('create_new', data);
   }
-}
-
-function sendmouse(xpos, ypos) {
-  console.log("sendmouse: " + xpos + " " + ypos);
-  
-  var data = {x: xpos, y: ypos};
-
-  socket.emit('mouse',data);
 }

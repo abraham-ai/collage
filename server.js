@@ -21,9 +21,52 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
   
+
+  socket.on('create_inpaint', async (data) => {
+
+    
+    const creation_config = {
+      "mode": "inpaint",
+      "input_image": data.image,
+      "mask_image": data.mask,
+      "ddim_steps": 50
+    }
+    
+    let results = await axios.post(`${generator_url}/run`, creation_config);
+    const task_id = results.data.token;
+    console.log(task_id)
+    
+    async function run_generator_update() {
+      results = await axios.post(`${generator_url}/fetch`, {token: task_id});
+
+      console.log(results)
+
+      if (results.data.status.status == 'complete') {
+        
+        let creation = results.data.output.creation;
+        socket.emit('creation', {
+          creation: creation,
+          mouse: data.mouse
+        });
+        return;
+      }
+      setTimeout(function(){
+        run_generator_update();
+      }, 5000);
+    }
+    
+    run_generator_update();
+
+
+    
+  });
+
+
+
   socket.on('create_new', async (data) => {
 
     const creation_config = {
+      "mode": "generate",
       "text_input": data.text_input,
       "C": 16,
       "f": 16,

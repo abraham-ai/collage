@@ -1,3 +1,40 @@
+// let pg1, pg2, pg;
+
+// function setup() {
+//   createCanvas(20000, 1000);
+//   pg1 = createGraphics(512, 512);
+//   pg2 = createGraphics(512, 512);
+//   pg = createGraphics(512, 512);
+
+//   pg1.background(255, 0, 0);
+//   for (var i=0; i<100; i++) {
+//     pg1.fill(random(255), random(255), random(255));
+//     pg1.ellipse(random(512), random(512), 100);
+//   }
+
+//   pg2.background(0);
+//   pg2.fill(255);
+//   pg2.ellipse(256, 256, 300, 300);
+
+//   pg.push();
+//   pg.blendMode(BLEND)
+//   pg.image(pg1, 0, 0);
+//   pg.blendMode(ADD)
+//   pg.image(pg2, 0, 0);
+//   pg.pop();
+
+
+// }
+
+// function draw() {
+
+//   background(0);
+//   image(pg1, mouseX+512, mouseY);
+//   image(pg2, mouseX+1024, mouseY);
+//   image(pg, mouseX, mouseY);
+
+// }
+
 var resizeable = false;
 var forceSquare = true;
 
@@ -54,9 +91,13 @@ class Canvas {
     pgNew.pop();
 
     pgMaskNew.push();
+    pgMaskNew.background(0);
     if (this.pgMask) {
       pgMaskNew.image(this.pgMask, this.min.x-minx, this.min.y-miny);
     }
+    pgMaskNew.fill(0);
+    pgMaskNew.noStroke();
+    pgMaskNew.rect(patch.x-minx, patch.y-miny, patch.w, patch.h);
     pgMaskNew.pop();
 
     this.pg = pgNew;
@@ -68,8 +109,10 @@ class Canvas {
   draw() {
     if (!this.pg) return;
     push();
+    blendMode(BLEND);
     translate(this.min.x, this.min.y);
     image(this.pg, 0, 0);
+    blendMode(ADD);
     image(this.pgMask, 0, 0);
     pop();
   }
@@ -80,15 +123,24 @@ class Canvas {
     this.pgMask.noStroke();
     this.pgMask.ellipse(mx-this.min.x, my-this.min.y, 50, 50);
   }
-  
+
+  inpaint(sel) {
+    let img_crop = this.pg.get(sel.x-this.min.x, sel.y-this.min.y, sel.w, sel.h);
+    let img_mask = this.pgMask.get(sel.x-this.min.x, sel.y-this.min.y, sel.w, sel.h);
+    socket.emit('inpaint', {
+      image: img_crop.canvas.toDataURL("image/png"),
+      mask: img_mask.canvas.toDataURL("image/png"),
+      selection: sel
+    });
+  }  
 }
   
   
 
-var pimg;
+var initImg;
 
 function preload() {
-  pimg = loadImage("2.jpg");
+  initImg = loadImage("2.jpg");
 
 }
 
@@ -100,29 +152,27 @@ function setup() {
 
   socket = io.connect();
   sel = new Patch(resizeable, forceSquare);
-  sel.set(0, 0, 512, 512);  
-  patches = [];
+  sel.set(0, 0, 512, 512);
+
+  patches = [sel];
 
   setZoomLevel(100);
 
 
   input = createInput();
   input.position(20, 65);
-
   button = createButton('submit');
-  button.position(input.x + input.width, 65);
+  //button.position(input.x + input.width, 65);
   // button.mousePressed(greet);
 
-  greeting = createElement('h2', 'what is your name?');
+  greeting = createElement('h1', 'what is your name?');
   greeting.position(20, 5);
 
 
 
-  let newPatch = new Patch(false, true, pimg);
-  newPatch.set(0, 0, pimg.width, pimg.height);
+  let newPatch = new Patch(false, true, initImg);
+  newPatch.set(0, 0, initImg.width, initImg.height);
   patches.push(newPatch);
-
-
 
 
   socket.on('creation',
@@ -134,13 +184,21 @@ function setup() {
         img.drawingContext.drawImage(pimg, 0, 0);
         let newPatch = new Patch(false, true, img);
         newPatch.set(data.mouse.x, data.mouse.y, 512, 512);
-        
         patches.push(newPatch);
+      }
+    }
+  );
 
-
-
-
-
+  socket.on('inpainting',
+    function(data) {
+      var pimg = new Image();
+      pimg.src='data:image/jpeg;base64,'+data.creation.data;
+      pimg.onload = function() {
+        var img = createImage(pimg.width, pimg.height);
+        img.drawingContext.drawImage(pimg, 0, 0);
+        let newPatch = new Patch(false, true, img);
+        newPatch.set(data.selection.x, data.selection.y, data.selection.w, data.selection.h);
+        canv.paste(newPatch);
       }
     }
   );
@@ -157,7 +215,7 @@ function draw() {
   patches.forEach((patch, i) => {
     patch.draw(active == i);
   });
-  // sel.draw();
+  sel.draw();
   pop();
 
 
@@ -282,38 +340,42 @@ function keyReleased() {
       text_input: 'a dinosaur with a mohawk',
       mouse: {x: mx, y: my}
     }
-    socket.emit('create_new', data);
+    socket.emit('create', data);
   }
 
 
   else if (key == 'q') {
     console.log("INPAINT 1")
     
+    
+    canv.inpaint(sel);
 
     var mx = (mouseX-trans.x)/zoom;
     var my = (mouseY-trans.y)/zoom;
-    console.log("INPAINT 1a")
+    // console.log("INPAINT 1a")
     
-    //let img_crop = get(mx, my, 512, 512);
-    let img_crop = get(200, 200, 512, 512);
-    console.log("INPAINT 1b")
-    let img_mask = createGraphics(512, 512);
-    console.log("INPAINT 1c")
+    // //let img_crop = get(mx, my, 512, 512);
+    // let img_crop = get(200, 200, 512, 512);
+    // console.log("INPAINT 1b")
+    // let img_mask = createGraphics(512, 512);
+    // console.log("INPAINT 1c")
     
-    img_mask.background(0);
-    img_mask.fill(255);
-    img_mask.ellipse(256, 256, 200, 200);
-    console.log("INPAINT 1d")
+    // img_mask.background(0);
+    // img_mask.fill(255);
+    // img_mask.ellipse(256, 256, 200, 200);
+    // console.log("INPAINT 1d")
     
-    //image(img_mask, 100, 100)
+    // //image(img_mask, 100, 100)
 
-    console.log("INPAINT 1e")
+    // console.log("INPAINT 1e")
     
+    /*
     socket.emit('create_inpaint', {
       image: img_crop.canvas.toDataURL("image/png"),
       mask: img_mask.canvas.toDataURL("image/png"),
       mouse: {x: mx, y: my}
     });
+    */
     
     // socket.emit('create_inpaint927', {
     //   img: img_crop,

@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
   });
   
 
-  socket.on('create_inpaint', async (data) => {
+  socket.on('inpaint', async (data) => {
 
     
     const creation_config = {
@@ -44,10 +44,17 @@ io.on('connection', (socket) => {
       if (results.data.status.status == 'complete') {
         
         let creation = results.data.output.creation;
-        socket.emit('creation', {
+        // socket.emit('creation', {
+        //   creation: creation,
+        //   mouse: data.mouse
+        // });
+        
+        socket.emit('inpainting', {
           creation: creation,
-          mouse: data.mouse
+          selection: data.selection
         });
+
+
         return;
       }
       setTimeout(function(){
@@ -63,7 +70,7 @@ io.on('connection', (socket) => {
 
 
 
-  socket.on('create_new', async (data) => {
+  socket.on('create', async (data) => {
 
     const creation_config = {
       "mode": "generate",

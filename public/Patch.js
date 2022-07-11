@@ -32,7 +32,7 @@ class Patch {
         fill(255);
         image(this.img, this.x, this.y, this.w, this.h);
       } else {
-        fill(0, 255, 0, 100);
+        fill(255, 100);
         rect(this.x, this.y, this.w, this.h);
       }
       if (active) {

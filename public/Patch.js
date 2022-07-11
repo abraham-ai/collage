@@ -1,4 +1,4 @@
-class Selection {
+class Patch {
 
     constructor(resizeable, forceSquare, img) {
       this.resizeable = resizeable;

@@ -2,12 +2,17 @@ var resizeable = false;
 var forceSquare = true;
 
 var canv;
-var gens = [];
+var patches = [];
 var zoomLevel;
 var zoom;
 var trans = {x: 0, y: 0};;
 var sel;
+
+
 var selecting = false;
+var alt = false;
+
+
 var active = -1;
 
 var socket;
@@ -21,19 +26,84 @@ var input_text = '';
 let input, button, greeting;
 
 
+class Canvas {
+
+  constructor() {
+    this.min = {x:1e8, y:1e8};
+    this.max = {x:-1e8, y:-1e8};
+    this.pg = null;
+    this.pgMask = null;
+  }
+      
+  paste(patch) {
+    let minx = min(this.min.x, patch.x);
+    let miny = min(this.min.y, patch.y);
+    let maxx = max(this.max.x, patch.x+patch.w);
+    let maxy = max(this.max.y, patch.y+patch.h);
+
+    let pgNew = createGraphics(maxx-minx, maxy-miny);
+    let pgMaskNew = createGraphics(maxx-minx, maxy-miny);
+    
+    pgNew.push();
+    pgNew.background(255, 0, 0);
+    if (this.pg) {
+      pgNew.image(this.pg, this.min.x-minx, this.min.y-miny);
+    }
+    pgNew.fill(255);
+    pgNew.image(patch.img, patch.x-minx, patch.y-miny, patch.w, patch.h);
+    pgNew.pop();
+
+    pgMaskNew.push();
+    if (this.pgMask) {
+      pgMaskNew.image(this.pgMask, this.min.x-minx, this.min.y-miny);
+    }
+    pgMaskNew.pop();
+
+    this.pg = pgNew;
+    this.pgMask = pgMaskNew;
+    this.min = {x: minx, y:miny};
+    this.max = {x: maxx, y:maxy};
+  }
+
+  draw() {
+    if (!this.pg) return;
+    push();
+    translate(this.min.x, this.min.y);
+    image(this.pg, 0, 0);
+    image(this.pgMask, 0, 0);
+    pop();
+  }
+
+  drawMask(mx, my) {
+    if (!this.pgMask) return;
+    this.pgMask.fill(255);
+    this.pgMask.noStroke();
+    this.pgMask.ellipse(mx-this.min.x, my-this.min.y, 50, 50);
+  }
+  
+}
+  
+  
+
+var pimg;
 
 function preload() {
-  canv = loadImage('2.jpg');
+  pimg = loadImage("2.jpg");
+
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  socket = io.connect();
-  sel = new Selection(resizeable, forceSquare);
-  sel.set(0, 0, 512, 512);  
-  gens = [sel];
 
-  setZoomLevel(300);
+  canv = new Canvas();
+
+
+  socket = io.connect();
+  sel = new Patch(resizeable, forceSquare);
+  sel.set(0, 0, 512, 512);  
+  patches = [];
+
+  setZoomLevel(100);
 
 
   input = createInput();
@@ -48,6 +118,11 @@ function setup() {
 
 
 
+  let newPatch = new Patch(false, true, pimg);
+  newPatch.set(0, 0, pimg.width, pimg.height);
+  patches.push(newPatch);
+
+
 
 
   socket.on('creation',
@@ -57,10 +132,15 @@ function setup() {
       pimg.onload = function() {
         var img = createImage(pimg.width, pimg.height);
         img.drawingContext.drawImage(pimg, 0, 0);
-        let newGen = new Selection(false, true, img);
-        newGen.set(data.mouse.x, data.mouse.y, 512, 512);
-        gens.push(newGen);
-        //image(img, data.mouse.x, data.mouse.y);
+        let newPatch = new Patch(false, true, img);
+        newPatch.set(data.mouse.x, data.mouse.y, 512, 512);
+        
+        patches.push(newPatch);
+
+
+
+
+
       }
     }
   );
@@ -68,13 +148,14 @@ function setup() {
 }
 
 function draw() {
-  background(100);
+  background(200);
   push();
   translate(trans.x, trans.y);
   scale(zoom);
-  image(canv, 0, 0);
-  gens.forEach((gen, i) => {
-    gen.draw(active == i);
+  //image(canv, 0, 0);
+  canv.draw();
+  patches.forEach((patch, i) => {
+    patch.draw(active == i);
   });
   // sel.draw();
   pop();
@@ -109,8 +190,8 @@ function draw() {
 }
 
 function setZoomLevel(z) {
-  zoomLevel = constrain(z, 0, 300);
-  zoom = 0.01 * pow(100, zoomLevel/300.0);
+  zoomLevel = constrain(z, 0, 100);
+  zoom = 0.01 * pow(100, zoomLevel/100.0);
 }
 
 function mouseMoved() {
@@ -120,9 +201,9 @@ function mouseMoved() {
   var mx = (mouseX-trans.x)/zoom;
   var my = (mouseY-trans.y)/zoom;
   active = -1;
-  for (var g=0; g<gens.length; g++) {
-    if (gens[g].inside(mx, my)) {
-      active = g;
+  for (var p=0; p<patches.length; p++) {
+    if (patches[p].inside(mx, my)) {
+      active = p;
     }
   }
 }
@@ -130,7 +211,7 @@ function mouseMoved() {
 function mousePressed() {
   if (selecting) {
     if (active == -1) return;
-    gens[active].mousePressed(mouseX/zoom-trans.x, mouseY/zoom-trans.y);
+    patches[active].mousePressed(mouseX/zoom-trans.x, mouseY/zoom-trans.y);
   } 
 }
 
@@ -139,8 +220,12 @@ function mouseDragged() {
   var my = (mouseY-trans.y)/zoom;
   if (selecting) {    
     if (active == -1) return;
-    gens[active].mouseDragged(mx, my); 
-  } else {
+    patches[active].mouseDragged(mx, my); 
+  } 
+  else if (alt) {
+    canv.drawMask(mx, my);
+  }
+  else {
     trans.x = trans.x + (mouseX - pmouseX)
     trans.y = trans.y + (mouseY - pmouseY);
   }
@@ -150,30 +235,41 @@ function mouseReleased() {
   var mx = (mouseX-trans.x)/zoom;
   var my = (mouseY-trans.y)/zoom;
   if (active == -1) return;
-  gens[active].mouseReleased(mx, my);
-  // for (var g=0; g<gens.length; g++) {
-  //   gens[g].mouseReleased(mx, my);
-  // }
+  patches[active].mouseReleased(mx, my);
 }
 
 function keyPressed() {
-  if (textbar) {
-    input_text += key;
-  }
   console.log("key",key)
+
   if (key == 'Shift') {
     selecting = true;
+    return;
   }
-  else if (key=='c') {
+  if (key == 'Meta') {
+    alt = true;
+    return;
   }
-  else if (key=='v') {
+  
+  if (active == -1) return;
+
+  if (key == 'Enter') {
+    canv.paste(patches[active]);
   }
+  else if (key == 'Backspace') {
+    patches.splice(active, 1);
+  }
+
+
+
 }
 
 function keyReleased() {
   console.log("go now", key)
   if (key == 'Shift') {
     selecting = false;
+  }
+  else if (key == 'Meta') {
+    alt = false;
   }
   else if (key == 't') {
     textbar = true;
@@ -240,20 +336,7 @@ function mouseWheel(event) {
   }
 }
 
-
-
-
-// function setup() {
-//   createCanvas(1280, 1024);
-//   background(0);
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
   
-
-// }
-
-// function draw() {
-  
-// }
-
-// function mouseDragged() {
-  
-// }

@@ -21,6 +21,15 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 
+
+  socket.on('sendtest2', async (data) => {
+    console.log(data);
+    var data2 = {"theproduct": data.product}
+    socket.emit('test2', data2)
+
+  });
+
+
   socket.on('inpaint', async (data) => {
 
     const creation_config = {
@@ -40,21 +49,20 @@ io.on('connection', (socket) => {
       console.log(results)
 
       if (results.data.status.status == 'complete') {
-        
         let creation = results.data.output.creation;
-        // socket.emit('creation', {
-        //   creation: creation,
-        //   mouse: data.mouse
-        // });
-        
-        socket.emit('inpainting', {
+        return socket.emit('inpainting', {
           creation: creation,
           selection: data.selection
         });
-
-
-        return;
       }
+      else if (results.data.status.status == 'pending') {
+      }
+      else if (results.data.status.status == 'queued') {
+      }
+      else if (results.data.status.status == 'running') {
+      }
+
+
       setTimeout(function(){
         run_generator_update();
       }, 5000);
@@ -65,6 +73,13 @@ io.on('connection', (socket) => {
   });
 
 
+  socket.on('create55', async (data) => {
+    console.log("cvreate 4")
+    socket.emit('creation88', {
+      "hello": "world"
+    });
+
+  });
 
   socket.on('create', async (data) => {
 
@@ -80,21 +95,33 @@ io.on('connection', (socket) => {
     
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;
+
     
     async function run_generator_update() {
       results = await axios.post(`${generator_url}/fetch`, {token: task_id});
 
-      if (results.data.status.status == 'complete') {
+      let status = results.data.status.status;
+      let output = {patchIdx: data.patchIdx, status: status}
+
+      if (status == 'complete') {
         let creation = results.data.output.creation;
-        socket.emit('creation', {
-          creation: creation,
-          position: data.position
-        });
+        output.creation = creation;
+      }
+      else if (status == 'running') {
+        let progress = results.data.status.progress;
+        progress = progress == "__none__" ? 0 : progress;
+        output.progress = progress;
+      }
+
+      socket.emit('creation', output);
+
+      if (status == 'complete') {
         return;
       }
+
       setTimeout(function(){
         run_generator_update();
-      }, 5000);
+      }, 1000);
     }
     
     run_generator_update();

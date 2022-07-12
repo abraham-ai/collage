@@ -4,6 +4,7 @@ class Patch {
       this.resizeable = resizeable;
       this.forceSquare = forceSquare;
       this.img = img;
+      this.status = null;
       this.s1 = {x:0, y:0};
       this.s2 = {x:0, y:0};
       this.anchor = {x:0, y:0};
@@ -35,10 +36,16 @@ class Patch {
         fill(255, 100);
         rect(this.x, this.y, this.w, this.h);
       }
+      if (this.status) {
+        fill(0);
+        textSize(24);
+        textAlign(CENTER);
+        text(this.status, this.x+this.w/2, this.y+this.h/2)
+      }
       if (active) {
         stroke(0, 0, 255);
         noFill();
-        strokeWeight(3);
+        strokeWeight(5);
         rect(this.x, this.y, this.w, this.h);
       }
       pop();
@@ -62,7 +69,6 @@ class Patch {
         this.dragging = true;
       } 
       else if (this.resizeable) {
-        console.log("THIS IS RESIZING!!! 2222")  
         this.s2.x = this.s1.x;
         this.s2.y = this.s1.y;
       }
@@ -77,7 +83,6 @@ class Patch {
         this.y = this.anchor.y + (this.s2.y - this.s1.y);
       } 
       else if (this.resizeable) {  
-        console.log("THIS IS RESIZING!!!")  
         if (this.forceSquare) {
           if (abs(this.s2.x-this.s1.x) > abs(this.s2.y-this.s1.y)) {
             let marginY = 0.5 * ((this.s2.x-this.s1.x) - (this.s2.y-this.s1.y));

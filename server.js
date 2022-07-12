@@ -20,16 +20,14 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
-  
 
   socket.on('inpaint', async (data) => {
 
-    
     const creation_config = {
       "mode": "inpaint",
       "input_image": data.image,
       "mask_image": data.mask,
-      "ddim_steps": 50
+      "ddim_steps": 150
     }
     
     let results = await axios.post(`${generator_url}/run`, creation_config);
@@ -63,8 +61,6 @@ io.on('connection', (socket) => {
     }
     
     run_generator_update();
-
-
     
   });
 
@@ -77,7 +73,7 @@ io.on('connection', (socket) => {
       "text_input": data.text_input,
       "C": 16,
       "f": 16,
-      "ddim_steps": 40,
+      "ddim_steps": 150,
       "W": 512,
       "H": 512
     }
@@ -92,7 +88,7 @@ io.on('connection', (socket) => {
         let creation = results.data.output.creation;
         socket.emit('creation', {
           creation: creation,
-          mouse: data.mouse
+          position: data.position
         });
         return;
       }

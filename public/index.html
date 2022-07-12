@@ -4,19 +4,50 @@
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
     <script type="text/javascript" src="Patch.js"></script>
     <script type="text/javascript" src="sketch.js"></script>
+  </head>
+  <body>
+    
+    <div id="creationTool">
+      <form onsubmit="return mySubmitFunction(event)">
+        <b>Prompt</b>
+        <input id="prompt" name="prompt"></input>
+        <input id="submittext" type="submit" value="Submit">
+      </form>
+    </div>
+  </body>
+
     <style>
       body{
         margin:0;
         padding:0;
       }
+      #creationTool {
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0.75);
+        position: absolute; 
+        left: 0; 
+        right: 0;
+        top: 100px; 
+        margin-left: auto; 
+        margin-right: auto; 
+        padding: 30px;
+        width: 720px;
+        height: 250px;
+        font-size: 36px;
+        text-align: center;
+        font-family: 'Helvetica';
+        border: #333 solid 4px;
+      }
+      #creationTool textarea, input {
+        font-size: 24px;
+        padding: 15px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      #submittext {
+        background-color: #ccc;
+      }
     </style>
-  </head>
-  <body>
-<!--     
-    <div id="newCreateModal">
-      Hello!
-      <input>dude</div>
-    </div>
-     -->
+    
   </body>
 </html>

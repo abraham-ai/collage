@@ -46,6 +46,7 @@ var trans = {x: 0, y: 0};;
 var sel;
 
 
+var prompting = false;
 var selecting = false;
 var alt = false;
 
@@ -57,7 +58,6 @@ var socket;
 
 
 
-var textbar = false;
 var input_text = '';
 
 let input, button, greeting;
@@ -137,6 +137,31 @@ class Canvas {
   
   
 
+function run_creation(data) {
+  var pimg = new Image();
+  pimg.src='data:image/jpeg;base64,'+data.creation.data;
+  pimg.onload = function() {
+    var img = createImage(pimg.width, pimg.height);
+    img.drawingContext.drawImage(pimg, 0, 0);
+    let newPatch = new Patch(false, true, img);
+    newPatch.set(data.position.x, data.position.y, 512, 512);
+    patches.push(newPatch);
+  }
+}
+
+function run_inpainting(data) {
+  var pimg = new Image();
+  pimg.src='data:image/jpeg;base64,'+data.creation.data;
+  pimg.onload = function() {
+    var img = createImage(pimg.width, pimg.height);
+    img.drawingContext.drawImage(pimg, 0, 0);
+    let newPatch = new Patch(false, true, img);
+    newPatch.set(data.selection.x, data.selection.y, data.selection.w, data.selection.h);
+    canv.paste(newPatch);
+  }
+}
+
+
 var initImg;
 
 function preload() {
@@ -145,64 +170,22 @@ function preload() {
 }
 
 function setup() {
+  hideCreationTool();
   createCanvas(windowWidth, windowHeight);
-
   canv = new Canvas();
-
-
-  socket = io.connect();
-  sel = new Patch(resizeable, forceSquare);
-  sel.set(0, 0, 512, 512);
-
-  patches = [sel];
-
   setZoomLevel(100);
 
-
-  input = createInput();
-  input.position(20, 65);
-  button = createButton('submit');
-  //button.position(input.x + input.width, 65);
-  // button.mousePressed(greet);
-
-  greeting = createElement('h1', 'what is your name?');
-  greeting.position(20, 5);
-
-
+  sel = new Patch(resizeable, forceSquare);
+  sel.set(0, 0, 512, 512);
+  patches = [sel];
 
   let newPatch = new Patch(false, true, initImg);
   newPatch.set(0, 0, initImg.width, initImg.height);
   patches.push(newPatch);
 
-
-  socket.on('creation',
-    function(data) {
-      var pimg = new Image();
-      pimg.src='data:image/jpeg;base64,'+data.creation.data;
-      pimg.onload = function() {
-        var img = createImage(pimg.width, pimg.height);
-        img.drawingContext.drawImage(pimg, 0, 0);
-        let newPatch = new Patch(false, true, img);
-        newPatch.set(data.mouse.x, data.mouse.y, 512, 512);
-        patches.push(newPatch);
-      }
-    }
-  );
-
-  socket.on('inpainting',
-    function(data) {
-      var pimg = new Image();
-      pimg.src='data:image/jpeg;base64,'+data.creation.data;
-      pimg.onload = function() {
-        var img = createImage(pimg.width, pimg.height);
-        img.drawingContext.drawImage(pimg, 0, 0);
-        let newPatch = new Patch(false, true, img);
-        newPatch.set(data.selection.x, data.selection.y, data.selection.w, data.selection.h);
-        canv.paste(newPatch);
-      }
-    }
-  );
-
+  socket = io.connect();
+  socket.on('creation', run_creation);
+  socket.on('inpainting', run_inpainting);
 }
 
 function draw() {
@@ -210,41 +193,12 @@ function draw() {
   push();
   translate(trans.x, trans.y);
   scale(zoom);
-  //image(canv, 0, 0);
   canv.draw();
   patches.forEach((patch, i) => {
     patch.draw(active == i);
   });
   sel.draw();
   pop();
-
-
-  if (textbar) {
-
-    push();
-    fill(255);
-    translate(200, 300);
-    rect(0, 0, width-400, 100);
-    textSize(72);
-    fill(0);
-    text(input_text, 50, 84);
-    pop();
-  }
-
-  // const name = input.value();
-  // greeting.html('hello ' + name + '!');
-  // input.value('');
-
-  // for (let i = 0; i < 200; i++) {
-  //   push();
-  //   fill(random(255), 255, 255);
-  //   translate(random(width), random(height));
-  //   rotate(random(2 * PI));
-  //   text(name, 0, 0);
-  //   pop();
-  // }
-
-  
 }
 
 function setZoomLevel(z) {
@@ -253,7 +207,7 @@ function setZoomLevel(z) {
 }
 
 function mouseMoved() {
-  if (selecting) {
+  if (selecting || prompting) {
     return;
   }
   var mx = (mouseX-trans.x)/zoom;
@@ -267,6 +221,7 @@ function mouseMoved() {
 }
 
 function mousePressed() {
+  if (prompting) return;
   if (selecting) {
     if (active == -1) return;
     patches[active].mousePressed(mouseX/zoom-trans.x, mouseY/zoom-trans.y);
@@ -274,6 +229,7 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+  if (prompting) return;
   var mx = (mouseX-trans.x)/zoom;
   var my = (mouseY-trans.y)/zoom;
   if (selecting) {    
@@ -290,6 +246,7 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+  if (prompting) return;
   var mx = (mouseX-trans.x)/zoom;
   var my = (mouseY-trans.y)/zoom;
   if (active == -1) return;
@@ -297,96 +254,41 @@ function mouseReleased() {
 }
 
 function keyPressed() {
-  console.log("key",key)
-
-  if (key == 'Shift') {
+  if (key == 'Tab') {
+    toggleCreationTool();
+    return;
+  }
+  else if (key == 'Shift') {
     selecting = true;
     return;
   }
-  if (key == 'Meta') {
+  else if (key == 'Meta') {
     alt = true;
     return;
   }
   
+  if (prompting) return;
   if (active == -1) return;
-
+  
   if (key == 'Enter') {
     canv.paste(patches[active]);
   }
   else if (key == 'Backspace') {
     patches.splice(active, 1);
   }
-
-
-
 }
 
 function keyReleased() {
-  console.log("go now", key)
   if (key == 'Shift') {
     selecting = false;
+    return;
   }
   else if (key == 'Meta') {
     alt = false;
-  }
-  else if (key == 't') {
-    textbar = true;
-
-  }
-  else if (key == 'n') {
-    var mx = (mouseX-trans.x)/zoom;
-    var my = (mouseY-trans.y)/zoom;
-    var data = {
-      text_input: 'a dinosaur with a mohawk',
-      mouse: {x: mx, y: my}
-    }
-    socket.emit('create', data);
-  }
-
-
+    return;
+  } 
   else if (key == 'q') {
-    console.log("INPAINT 1")
-    
-    
     canv.inpaint(sel);
-
-    var mx = (mouseX-trans.x)/zoom;
-    var my = (mouseY-trans.y)/zoom;
-    // console.log("INPAINT 1a")
-    
-    // //let img_crop = get(mx, my, 512, 512);
-    // let img_crop = get(200, 200, 512, 512);
-    // console.log("INPAINT 1b")
-    // let img_mask = createGraphics(512, 512);
-    // console.log("INPAINT 1c")
-    
-    // img_mask.background(0);
-    // img_mask.fill(255);
-    // img_mask.ellipse(256, 256, 200, 200);
-    // console.log("INPAINT 1d")
-    
-    // //image(img_mask, 100, 100)
-
-    // console.log("INPAINT 1e")
-    
-    /*
-    socket.emit('create_inpaint', {
-      image: img_crop.canvas.toDataURL("image/png"),
-      mask: img_mask.canvas.toDataURL("image/png"),
-      mouse: {x: mx, y: my}
-    });
-    */
-    
-    // socket.emit('create_inpaint927', {
-    //   img: img_crop,
-    //   mask: img_mask,
-    //   mouse: {x: mx, y: my}
-    // });
-
-
-    console.log("INPAINT 1f")
-    
-    console.log("INPAINT 2")
   }
 }
 
@@ -401,4 +303,37 @@ function mouseWheel(event) {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
-  
+
+function showCreationTool() {
+  prompting = true;
+  document.getElementById('creationTool').style.visibility = 'visible';
+}
+
+function hideCreationTool() {
+  prompting = false;
+  document.getElementById('creationTool').style.visibility = 'hidden';
+}
+
+function toggleCreationTool() {
+  if (prompting) {
+    hideCreationTool();
+  } else {
+    showCreationTool();
+  }
+}
+
+function mySubmitFunction(e) {
+  e.preventDefault();
+  hideCreationTool();
+  let prompt = document.getElementById("prompt");
+  var mx = (trans.x+width/2-256)/zoom;
+  var my = (trans.y+height/2-256)/zoom;
+  var data = {
+    text_input: prompt.value,
+    position: {x: mx, y: my}
+  }
+  socket.emit('create', data);
+  prompt.value = '';
+  return false;
+}
+

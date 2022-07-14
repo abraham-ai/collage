@@ -17,16 +17,16 @@ class Canvas {
     let pgMaskNew = createGraphics(maxx-minx, maxy-miny);
     
     pgNew.push();
-    pgNew.background(255, 0, 0);
     if (this.pg) {
       pgNew.image(this.pg, this.min.x-minx, this.min.y-miny);
     }
     pgNew.fill(255);
-    pgNew.image(patch.img, patch.x-minx, patch.y-miny, patch.w, patch.h);
+    if (patch.img) {
+      pgNew.image(patch.img, patch.x-minx, patch.y-miny, patch.w, patch.h);
+    }
     pgNew.pop();
 
     pgMaskNew.push();
-    pgMaskNew.background(0);
     if (this.pgMask) {
       pgMaskNew.image(this.pgMask, this.min.x-minx, this.min.y-miny);
     }
@@ -43,31 +43,50 @@ class Canvas {
 
   draw() {
     if (!this.pg) return;
+    this.pgFinal = this.pg.get();
+    this.pgFinal.mask(this.pgMask.get());
     push();
-    blendMode(BLEND);
     translate(this.min.x, this.min.y);
-    image(this.pg, 0, 0);
-    blendMode(ADD);
-    image(this.pgMask, 0, 0);
+    image(this.pgFinal, 0, 0);
     pop();
   }
 
   drawMask(mx, my) {
     if (!this.pgMask) return;
+    this.pgMask.erase();
     this.pgMask.fill(255);
     this.pgMask.noStroke();
     this.pgMask.ellipse(mx-this.min.x, my-this.min.y, 50, 50);
+    this.pgMask.noErase();
   }
 
-  inpaint(sel) {
-    let img_crop = this.pg.get(sel.x-this.min.x, sel.y-this.min.y, sel.w, sel.h);
-    let img_mask = this.pgMask.get(sel.x-this.min.x, sel.y-this.min.y, sel.w, sel.h);
-    socket.emit('inpaint', {
-      image: img_crop.canvas.toDataURL("image/png"),
-      mask: img_mask.canvas.toDataURL("image/png"),
-      selection: sel
-    });
-  }  
+  getInpaintingData(selector) {
+    let x = selector.x - this.min.x;
+    let y = selector.y - this.min.y;
+    let w = max(0, selector.x + selector.w - this.max.x);
+    let h = max(0, selector.y + selector.h - this.max.y);
+
+    let img_crop = this.pg.get(
+      selector.x - this.min.x, 
+      selector.y - this.min.y, 
+      selector.w, selector.h
+    );
+
+    let img_mask = this.pgMask.get(
+      max(0, x), 
+      max(0, y), 
+      selector.w-w, selector.h-h
+    );
+
+    let pgMaskWhite = createGraphics(selector.w, selector.h);
+    pgMaskWhite.background(255);
+    pgMaskWhite.image(img_mask, max(0, -x), max(0, -y));
+
+    img_mask = pgMaskWhite.get(0, 0, selector.w, selector.h);
+
+    return {img_crop, img_mask}
+  }
+
 }
   
   

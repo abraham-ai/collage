@@ -8,6 +8,7 @@ const io = require("socket.io")(server);
 const config = require('./config.json');
 const generator_url = config.generator_url;
 
+
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -21,68 +22,50 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 
-
-  socket.on('sendtest2', async (data) => {
-    console.log(data);
-    var data2 = {"theproduct": data.product}
-    socket.emit('test2', data2)
-
-  });
+  async function run_generator_update(task_id, patch_idx) {
+    let results = await axios.post(`${generator_url}/fetch`, {token: task_id});
+    let status = results.data.status.status;
+    let output = {patch_idx: patch_idx, status: status}
+    let intermediateCreation = null;
+    if (status == 'complete') {
+      let creation = results.data.output.creation;
+      output.creation = creation.data;
+    }
+    else if (status == 'running') {
+      let progress = results.data.status.progress;
+      progress = progress == "__none__" ? 0 : progress;
+      output.progress = progress;
+      if (results.data.output.intermediate_creation) {
+        let newCreation = results.data.output.intermediate_creation.data;
+        if (newCreation != intermediateCreation) {
+          intermediateCreation = newCreation;
+          output.creation = intermediateCreation;
+        }
+      }
+    }
+    socket.emit('creation', output);
+    if (status == 'complete') {
+      return;
+    }
+    setTimeout(function(){
+      run_generator_update(task_id, patch_idx);
+    }, 1000);
+  }
 
 
   socket.on('inpaint', async (data) => {
-
     const creation_config = {
       "mode": "inpaint",
       "input_image": data.image,
       "mask_image": data.mask,
       "ddim_steps": 150
-    }
-    
+    }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;
-    console.log(task_id)
-    
-    async function run_generator_update() {
-      results = await axios.post(`${generator_url}/fetch`, {token: task_id});
-
-      console.log(results)
-
-      if (results.data.status.status == 'complete') {
-        let creation = results.data.output.creation;
-        return socket.emit('inpainting', {
-          creation: creation,
-          selection: data.selection
-        });
-      }
-      else if (results.data.status.status == 'pending') {
-      }
-      else if (results.data.status.status == 'queued') {
-      }
-      else if (results.data.status.status == 'running') {
-      }
-
-
-      setTimeout(function(){
-        run_generator_update();
-      }, 5000);
-    }
-    
-    run_generator_update();
-    
-  });
-
-
-  socket.on('create55', async (data) => {
-    console.log("cvreate 4")
-    socket.emit('creation88', {
-      "hello": "world"
-    });
-
+    run_generator_update(task_id, data.patch_idx);
   });
 
   socket.on('create', async (data) => {
-
     const creation_config = {
       "mode": "generate",
       "text_input": data.text_input,
@@ -91,41 +74,10 @@ io.on('connection', (socket) => {
       "ddim_steps": 150,
       "W": 512,
       "H": 512
-    }
-    
+    }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;
-
-    
-    async function run_generator_update() {
-      results = await axios.post(`${generator_url}/fetch`, {token: task_id});
-
-      let status = results.data.status.status;
-      let output = {patchIdx: data.patchIdx, status: status}
-
-      if (status == 'complete') {
-        let creation = results.data.output.creation;
-        output.creation = creation;
-      }
-      else if (status == 'running') {
-        let progress = results.data.status.progress;
-        progress = progress == "__none__" ? 0 : progress;
-        output.progress = progress;
-      }
-
-      socket.emit('creation', output);
-
-      if (status == 'complete') {
-        return;
-      }
-
-      setTimeout(function(){
-        run_generator_update();
-      }, 1000);
-    }
-    
-    run_generator_update();
-    
+    run_generator_update(task_id, data.patch_idx);
   });
 
 });

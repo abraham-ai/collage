@@ -6,39 +6,25 @@ var patchesLookupIdx = 0;
 function setupSocket() {
   socket = io.connect();
   socket.on('creation', receive_creation);
-  socket.on('inpainting', receive_inpainting);
 }
 
 function receive_creation(data) {
-
-  console.log(data.status)
-
   if (data.status == 'pending') {
-    patchesLookup[data.patchIdx].status = "pending";
+    patchesLookup[data.patch_idx].status = "pending";
+  } else if (data.status == 'running') {
+    patchesLookup[data.patch_idx].status = int(100*data.progress)+"% done";
+  } else if (data.status == 'complete') {
+    patchesLookup[data.patch_idx].status = null;
   }
-  if (data.status == 'running') {
-    patchesLookup[data.patchIdx].status = int(100*data.progress)+"% done";
-  }
-
   if (!data.creation) {
     return;
   }
-
   var pimg = new Image();
-  pimg.src = 'data:image/jpeg;base64,'+data.creation.data;
+  pimg.src = 'data:image/jpeg;base64,'+data.creation;
   pimg.onload = function() {
     var img = createImage(pimg.width, pimg.height);
     img.drawingContext.drawImage(pimg, 0, 0);
-    patchesLookup[data.patchIdx].img = img;
-  }
-}
-
-function receive_inpainting(data) {
-  var pimg = new Image();
-  pimg.src = 'data:image/jpeg;base64,'+data.creation.data;
-  pimg.onload = function() {
-    var img = createImage(pimg.width, pimg.height);
-    img.drawingContext.drawImage(pimg, 0, 0);
+    patchesLookup[data.patch_idx].img = img;
   }
 }
 
@@ -54,8 +40,22 @@ function submitPrompt() {
   patches.push(newPatch);
   socket.emit('create', {
     text_input: prompt.value,
-    patchIdx: patchesLookupIdx
+    patch_idx: patchesLookupIdx
   });
   patchesLookupIdx++;
   prompt.value = '';
 }
+
+function submitInpaint() {
+  let {img_crop, img_mask} = canvas.getInpaintingData(selector)
+  patchesLookup[patchesLookupIdx] = selector;
+  patches.push(selector);
+  socket.emit('inpaint', {
+    image: img_crop.canvas.toDataURL("image/png"),
+    mask: img_mask.canvas.toDataURL("image/png"),
+    patch_idx: patchesLookupIdx
+  });
+  patchesLookupIdx++;
+  prompt.value = '';
+}
+

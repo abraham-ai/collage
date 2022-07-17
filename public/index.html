@@ -17,6 +17,12 @@
       </form>
     </div>
 
+    <div id="menu">
+      <button onclick="toggleCreationTool()">Create</button>
+      <button onclick="submitInpaint()">Inpaint</button>
+      <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button>
+    </div>
+
   </body>
 
     <style>
@@ -49,6 +55,19 @@
       }
       #submittext {
         background-color: #ccc;
+      }
+      #menu {
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0.75);
+        position: absolute; 
+        left: 1px; 
+        top: 2px; 
+        padding: 0px;
+        margin: 0px;
+        font-size: 36px;
+        text-align: center;
+        font-family: 'Helvetica';
+        border: #333 solid 4px;
       }
     </style>
     

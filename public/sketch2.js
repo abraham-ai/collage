@@ -2,51 +2,57 @@
 
 
 var canvas;
-
 var patches = [];
-var active = -1;
 
 var zoomLevel;
 var zoom;
 var trans = {x: 0, y: 0};;
-
 var selector = null;
 
-// var prompting = false;
-var shift = false;
-var cmd = false;
+var prompting = false;
+var selecting = false;
+var alt = false;
+
+var active = null;
 
 
-
-// var initimg;
-// function preload() {
-//   initimg = loadImage("2.jpg");
-// }
+var initimg;
+function preload() {
+  initimg = loadImage("2.jpg");
+}
 
 function setup() {
   hideCreationTool();
   createCanvas(windowWidth, windowHeight);
   canvas = new Canvas();
 
-  selector = null;
-  //selector = new Selector(true, false, null);
-  //selector.set(0, 0, 512, 512);
-  // var p = new Patch(false, true, initimg);
-  // p.set(0, 0, 512, 512);
-  // patches.push(p);
+  var p = new Patch(false, true, initimg);
+  p.set(0, 0, 512, 512);
+  patches.push(p);
 
   setZoomLevel(100);
   setupSocket();
 }
 
 function drawBackground() {
+
+
+  
   var margin = 20;
+
   var x1 = -trans.x/zoom;
   var y1 = -trans.y/zoom;
+
+  //x1 -= abs(x1 % margin);
+  //y1 -= abs(y1 % margin);
+
   var x2 = (width-trans.x)/zoom;
   var y2 = (height-trans.y)/zoom;
+
   x2 += margin;
   y2 += margin;
+
+  
   var filledy = false;
   for (var y=y1; y<y2; y+=margin) {
     //filled = j % 2 == 0;
@@ -58,28 +64,57 @@ function drawBackground() {
       rect(x, y, margin, margin);
       filled = !filled;
     }
+
   }
+
+
+
+  // for (var j=0; j<30; j++) {
+  //   filled = j % 2 == 0;
+  //   for (var i=0; i<30; i++) {
+  //     noStroke();
+  //     fill(filled ? 100 : 200, 100);
+  //     var x = 20 * i;
+  //     var y = 20 * j;
+  //     rect(x, y, 20, 20);
+  //     filled = !filled;
+  //   }
+
+  // }
+
+ // fill(255, 0, 0);
+ // ellipse(trans.x, trans.y, 20);
+
+
+  // var x1 = -trans.x/zoom;
+  // var y1 = -trans.y/zoom;
+  // fill(0, 255, 0);
+  // ellipse(mx, my, 20);
+
+  // var x2 = (width-trans.x)/zoom;
+  // var y2 = (height-trans.y)/zoom;
+
+
+  // fill(0, 255, 0);
+  // ellipse(mx, my, 20);
+
 }
 
 function draw() {
+  //background(200);
   background(255);
- 
   push();
-
   translate(trans.x, trans.y);
   scale(zoom);
- 
   drawBackground();
   canvas.draw();
   
   patches.forEach((patch, i) => {
     patch.draw(active == i);
   });
- 
   if (selector) {
     selector.draw(active == -1);
   }
-
   pop();
 }
 
@@ -89,68 +124,90 @@ function setZoomLevel(z) {
 }
 
 function mouseMoved() {
-
-}
-
-function mousePressed() {
-  var mx = (mouseX-trans.x)/zoom;
-  var my = (mouseY-trans.y)/zoom;
-
-
-
-  if (!selector) {
-    selector = new Selection(true, true, false, null);
-  }
-  selector.mousePressed(mx, my);
-
-
-}
-
-function mouseDragged() {
-  var mx = (mouseX-trans.x)/zoom;
-  var my = (mouseY-trans.y)/zoom;
-
-  if (shift) {
-    if (selector) {
-      selector.mouseDragged(mx, my); 
-    }
-  }
-  else if (cmd) {
-    canvas.drawMask(mx, my);
-  }
-  else {
-    trans.x = trans.x + (mouseX - pmouseX)
-    trans.y = trans.y + (mouseY - pmouseY);  
-  }
-
-}
-
-function mouseReleased() {
-  if (!selector) {
+  if (selecting || prompting) {
     return;
   }
   var mx = (mouseX-trans.x)/zoom;
   var my = (mouseY-trans.y)/zoom;
-  selector.mouseReleased(mx, my);
-  if (selector.w == 0 && selector.h == 0) {
-    selector = null;
-  }  
+  active = null;
+  if (selector) {
+    if (selector.inside(mx, my)) {
+      active = -1;
+    }
+  }
+  for (var p=0; p<patches.length; p++) {
+    if (patches[p].inside(mx, my)) {
+      active = p;
+    }
+  }
+}
+
+function mousePressed() {
+  if (prompting) return;
+  if (selecting) {
+    if (active == null) return;
+    if (active == -1) {
+      selector.mousePressed(mouseX/zoom-trans.x, mouseY/zoom-trans.y);
+    } else {
+      patches[active].mousePressed(mouseX/zoom-trans.x, mouseY/zoom-trans.y);
+    }
+  } 
+}
+
+function mouseDragged() {
+  if (prompting) return;
+  var mx = (mouseX-trans.x)/zoom;
+  var my = (mouseY-trans.y)/zoom;
+  if (selecting) {    
+    if (active == null) return;
+    if (active == -1) {
+      selector.mouseDragged(mx, my); 
+    } else {
+      patches[active].mouseDragged(mx, my); 
+    }
+  } 
+  else if (alt) {
+    
+
+    if (active == null) {
+      canvas.drawMask(mx, my);
+    } else if (active == -1) {
+      selector.drawMask(mx, my); 
+    } else {
+      patches[active].drawMask(mx, my); 
+    }
+  
+  }
+  else {
+    trans.x = trans.x + (mouseX - pmouseX)
+    trans.y = trans.y + (mouseY - pmouseY);
+  }
+}
+
+function mouseReleased() {
+  if (prompting) return;
+  var mx = (mouseX-trans.x)/zoom;
+  var my = (mouseY-trans.y)/zoom;
+  if (active == null) return;
+  if (active == -1) {
+    selector.mouseReleased(mx, my);
+  } else {
+    patches[active].mouseReleased(mx, my);
+  }
 }
 
 function keyPressed() {
   console.log(key);
-
-  if (key == 'Shift') {
-    shift = true;
-    return;
-  } 
-  else if (key == 'Meta') {
-    cmd = true;
+  if (key == 'Tab') {
+    toggleCreationTool();
     return;
   }
-
-  if (key == 'Tab' && selector) {
-    toggleCreationTool();
+  else if (key == 'Shift') {
+    selecting = true;
+    return;
+  }
+  else if (key == 'Meta') {
+    alt = true;
     return;
   }
   
@@ -177,22 +234,19 @@ function keyPressed() {
 
 function keyReleased() {
   if (key == 'Shift') {
-    shift = false;
+    selecting = false;
     return;
   }
   else if (key == 'Meta') {
-    cmd = false;
+    alt = false;
     return;
   } 
   else if (key == 'q') {
-    // selector = new Patch(false, true, null);
-    // selector.set((trans.x+width/2-256)/zoom, (trans.y+height/2-256)/zoom, 512, 512);
-  }
-  else if (key == 't') {
-
+    selector = new Patch(false, true, null);
+    selector.set((trans.x+width/2-256)/zoom, (trans.y+height/2-256)/zoom, 512, 512);
   }
   else if (key == 'w') {
-    //submitInpaint();
+    submitInpaint();
   }
 }
 

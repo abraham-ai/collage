@@ -25,6 +25,10 @@ io.on('connection', (socket) => {
   async function run_generator_update(task_id, patch_idx) {
     let results = await axios.post(`${generator_url}/fetch`, {token: task_id});
     let status = results.data.status.status;
+
+    console.log(results.data.status);
+    // console.log(results.data)
+
     let output = {patch_idx: patch_idx, status: status}
     let intermediateCreation = null;
     if (status == 'complete') {
@@ -58,9 +62,12 @@ io.on('connection', (socket) => {
       "mode": "inpaint",
       "input_image": data.image,
       "mask_image": data.mask,
-      "ddim_steps": 150
+      "ddim_steps": 150,
+      "W": 512,
+      "H": 512
     }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
+    console.log(results.data)
     const task_id = results.data.token;
     run_generator_update(task_id, data.patch_idx);
   });

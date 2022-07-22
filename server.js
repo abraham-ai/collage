@@ -63,11 +63,10 @@ io.on('connection', (socket) => {
       "input_image": data.image,
       "mask_image": data.mask,
       "ddim_steps": 150,
-      "W": 512,
-      "H": 512
+      "width": data.window_size.w,
+      "height": data.window_size.h
     }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
-    console.log(results.data)
     const task_id = results.data.token;
     run_generator_update(task_id, data.patch_idx);
   });
@@ -76,11 +75,11 @@ io.on('connection', (socket) => {
     const creation_config = {
       "mode": "generate",
       "text_input": data.text_input,
-      "C": 16,
-      "f": 16,
-      "ddim_steps": 150,
-      "W": 512,
-      "H": 512
+      "C": 4, 
+      "f": 8, 
+      "ddim_steps": 250, //150,
+      "width": data.window_size.w,
+      "height": data.window_size.h
     }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;

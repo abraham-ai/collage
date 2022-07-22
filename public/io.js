@@ -49,7 +49,8 @@ function submitPrompt() {
   patches.push(newPatch);
   socket.emit('create', {
     text_input: prompt.value,
-    patch_idx: patchesLookupIdx
+    patch_idx: patchesLookupIdx,
+    window_size: selector.window_size
   });
   patchesLookupIdx++;
   prompt.value = '';
@@ -60,8 +61,9 @@ function submitInpaint() {
   if (!selector) {
     return;
   }
-  selector.set(selector.x, selector.y, 512, 512);
   let {img_crop, img_mask} = canvas.getInpaintingData(selector);
+  img_crop.resize(selector.window_size.w, selector.window_size.h);
+  img_mask.resize(selector.window_size.w, selector.window_size.h);
   var newPatch = new Patch(false, false, false, null);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -69,7 +71,8 @@ function submitInpaint() {
   socket.emit('inpaint', {
     image: img_crop.canvas.toDataURL("image/png"),
     mask: img_mask.canvas.toDataURL("image/png"),
-    patch_idx: patchesLookupIdx
+    patch_idx: patchesLookupIdx,
+    window_size: selector.window_size
   });
   patchesLookupIdx++;
   selector = null;

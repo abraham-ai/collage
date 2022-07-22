@@ -6,6 +6,7 @@ class Selection {
     this.moveable = moveable;
     this.resizeable = resizeable;
     this.forceSquare = forceSquare;    
+    this.window_size = {w:0, h:0};
     this.s1 = {x:0, y:0};
     this.s2 = {x:0, y:0};
     this.anchor = {x:0, y:0};
@@ -18,6 +19,8 @@ class Selection {
     this.y = y;
     this.w = w;
     this.h = h;
+    this.window_size.w = Math.round(this.w/64)*64;
+    this.window_size.h = Math.round(this.h/64)*64;
   }
   
   setCenter(cx, cy) {
@@ -30,7 +33,19 @@ class Selection {
   }
   
   draw(active) {
+    let fontSize = min(this.h-4, 24);
     push();
+    noStroke();
+    fill(0, 125);
+    rect(this.x, this.y, this.w, fontSize+4);
+    fill(255);
+    textSize(fontSize);
+    textAlign(CENTER);
+    text(
+      this.w+" x "+this.h+" ➔ "+this.window_size.w+ " x "+this.window_size.h, 
+      this.x+this.w/2, 
+      this.y+fontSize
+    );
     if (active) {
       stroke(0, 0, 255);
       noFill();
@@ -70,29 +85,41 @@ class Selection {
     this.s2.x = mx;
     this.s2.y = my;
     if (this.dragging) {
-      this.x = this.anchor.x + (this.s2.x - this.s1.x);
-      this.y = this.anchor.y + (this.s2.y - this.s1.y);
+      this.set(
+        this.anchor.x + (this.s2.x - this.s1.x),
+        this.anchor.y + (this.s2.y - this.s1.y),
+        this.w,
+        this.h
+      )
     } 
     else if (this.resizeable) {  
       if (this.forceSquare) {
         if (abs(this.s2.x-this.s1.x) > abs(this.s2.y-this.s1.y)) {
           let marginY = 0.5 * ((this.s2.x-this.s1.x) - (this.s2.y-this.s1.y));
-          this.set(this.s1.x, this.s1.y-marginY, this.s2.x-this.s1.x, this.s2.y-this.s1.y+2*marginY);
-        } else {
+          this.set(
+            this.s1.x, 
+            this.s1.y-marginY, 
+            this.s2.x-this.s1.x, 
+            this.s2.y-this.s1.y+2*marginY
+          )
+        } 
+        else {
           let marginX = 0.5 * ((this.s2.y-this.s1.y) - (this.s2.x-this.s1.x));
           this.set(
             this.s1.x-marginX, 
             this.s1.y, 
             this.s2.x-this.s1.x+2*marginX, 
             this.s2.y-this.s1.y
-          );
+          )
         }
       }
       else {
-        this.x = this.s1.x;
-        this.y = this.s1.y;
-        this.w = this.s2.x - this.s1.x;
-        this.h = this.s2.y - this.s1.y;
+        this.set(
+          this.s1.x,
+          this.s1.y,
+          this.s2.x - this.s1.x,
+          this.s2.y - this.s1.y
+        )
       }
     }
     return this.dragging;

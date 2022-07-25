@@ -2,6 +2,7 @@
   <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.min.js" integrity="sha512-NxocnqsXP3zm0Xb42zqVMvjQIktKEpTIbCXXyhBPxqGZHqhcOXHs4pXI/GoZ8lE+2NJONRifuBpi9DxC58L0Lw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="GUIElements.js"></script>
     <script type="text/javascript" src="Patch.js"></script>
     <script type="text/javascript" src="Canvas.js"></script>
     <script type="text/javascript" src="io.js"></script>
@@ -18,9 +19,9 @@
     </div>
 
     <div id="menu">
-      <button onclick="toggleCreationTool()">Create</button>
-      <button onclick="submitInpaint()">Inpaint</button>
-      <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button>
+      <!-- <button onclick="toggleCreationTool()">Create</button> -->
+      <!-- <button onclick="submitInpaint()">Inpaint</button> -->
+      <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button>
     </div>
 
   </body>
@@ -31,6 +32,7 @@
         padding:0;
       }
       #creationTool {
+        visibility: hidden;
         color: #fff;
         background-color: rgba(0, 0, 0, 0.75);
         position: absolute; 
@@ -64,10 +66,13 @@
         top: 2px; 
         padding: 0px;
         margin: 0px;
-        font-size: 36px;
+        /* font-size: 36px; */
         text-align: center;
         font-family: 'Helvetica';
         border: #333 solid 4px;
+      }
+      #menu button {
+        font-size: 1.25em;
       }
     </style>
     

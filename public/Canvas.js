@@ -8,21 +8,28 @@ class Canvas {
   }
       
   paste(patch) {
+    console.log("lets patch?")
+    console.log("do i have img inside", patch.img)
     let minx = min(this.min.x, patch.x);
     let miny = min(this.min.y, patch.y);
     let maxx = max(this.max.x, patch.x+patch.w);
     let maxy = max(this.max.y, patch.y+patch.h);
 
+    console.log("patch", patch.x, patch.y, patch.w, patch.h)
     let pgNew = createGraphics(maxx-minx, maxy-miny);
     let pgMaskNew = createGraphics(maxx-minx, maxy-miny);
-    
+    console.log(minx, miny, maxx, maxy);
     pgNew.push();
     if (this.pg) {
       pgNew.image(this.pg, this.min.x-minx, this.min.y-miny);
     }
     pgNew.fill(255);
+    console.log("pdsfkjdsf")
     if (patch.img) {
+      console.log("lets draw to", patch.x-minx, patch.y-miny, patch.w, patch.h)
       pgNew.image(patch.img, patch.x-minx, patch.y-miny, patch.w, patch.h);
+    } else {
+      console.log("no img")
     }
     pgNew.pop();
 

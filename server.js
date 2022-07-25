@@ -22,14 +22,14 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 
-  async function run_generator_update(task_id, patch_idx) {
+  async function run_generator_update(task_id, patch_idx, auto_paste) {
     let results = await axios.post(`${generator_url}/fetch`, {token: task_id});
     let status = results.data.status.status;
 
     console.log(results.data.status);
     // console.log(results.data)
 
-    let output = {patch_idx: patch_idx, status: status}
+    let output = {patch_idx: patch_idx, status: status, auto_paste: auto_paste}
     let intermediateCreation = null;
     if (status == 'complete') {
       let creation = results.data.output.creation;
@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
       return;
     }
     setTimeout(function(){
-      run_generator_update(task_id, patch_idx);
+      run_generator_update(task_id, patch_idx, auto_paste);
     }, 1000);
   }
 
@@ -62,13 +62,13 @@ io.on('connection', (socket) => {
       "mode": "inpaint",
       "input_image": data.image,
       "mask_image": data.mask,
-      "ddim_steps": 150,
+      "ddim_steps": 250,
       "width": data.window_size.w,
       "height": data.window_size.h
     }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;
-    run_generator_update(task_id, data.patch_idx);
+    run_generator_update(task_id, data.patch_idx, data.auto_paste);
   });
 
   socket.on('create', async (data) => {
@@ -77,13 +77,13 @@ io.on('connection', (socket) => {
       "text_input": data.text_input,
       "C": 4, 
       "f": 8, 
-      "ddim_steps": 250, //150,
+      "ddim_steps": 250, 
       "width": data.window_size.w,
       "height": data.window_size.h
     }    
     let results = await axios.post(`${generator_url}/run`, creation_config);
     const task_id = results.data.token;
-    run_generator_update(task_id, data.patch_idx);
+    run_generator_update(task_id, data.patch_idx, data.auto_paste);
   });
 
 });

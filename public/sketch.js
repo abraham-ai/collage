@@ -8,33 +8,24 @@ var active = -1;
 
 var zoomLevel;
 var zoom;
-var trans = {x: 0, y: 0};;
+var trans = {x: 0, y: 0};
+var mouse = {x: 0, y: 0};
 
 var selector = null;
 
-// var prompting = false;
+var prompting = false;
 var shift = false;
 var cmd = false;
 
 
 
-// var initimg;
-// function preload() {
-//   initimg = loadImage("2.jpg");
-// }
-
 function setup() {
-  hideCreationTool();
-  createCanvas(windowWidth, windowHeight);
+  let cp5 = createCanvas(windowWidth, windowHeight);
+  cp5.drop(fileDropped);
+
   canvas = new Canvas();
-
   selector = null;
-  //selector = new Selector(true, false, null);
-  //selector.set(0, 0, 512, 512);
-  // var p = new Patch(false, true, initimg);
-  // p.set(0, 0, 512, 512);
-  // patches.push(p);
-
+  
   setZoomLevel(100);
   setupSocket();
 }
@@ -62,6 +53,9 @@ function drawBackground() {
 }
 
 function draw() {
+
+  //console.log("pr "+prompting+ " shift "+shift + " cmd "+cmd);
+
   background(255);
  
   push();
@@ -88,50 +82,82 @@ function setZoomLevel(z) {
   zoom = 0.01 * pow(100, zoomLevel/100.0);
 }
 
-function mouseMoved() {
+function updateMouse() {
+  mouse.x = (mouseX-trans.x)/zoom;
+  mouse.y = (mouseY-trans.y)/zoom;
+}
 
+function mouseMoved() {
+  updateMouse();
+  for (var p=0; p<patches.length; p++) {
+    patches[p].mouseMoved(mouse);
+  }
+
+  if (selector) {
+    selector.mouseMoved(mouse);
+  }
 }
 
 function mousePressed() {
-  var mx = (mouseX-trans.x)/zoom;
-  var my = (mouseY-trans.y)/zoom;
+  updateMouse();
 
+  let pressed = false;
+  for (var p=0; p<patches.length; p++) {
+    if (patches[p].mousePressed(mouse)) {
+      pressed = true;
+      break;
+    }
+  }
 
+  if (pressed) return;
 
   if (!selector) {
     selector = new Selection(true, true, false, null);
   }
-  selector.mousePressed(mx, my);
-
-
+  selector.mousePressed(mouse);
 }
 
 function mouseDragged() {
-  var mx = (mouseX-trans.x)/zoom;
-  var my = (mouseY-trans.y)/zoom;
+  updateMouse();
 
   if (shift) {
-    if (selector) {
-      selector.mouseDragged(mx, my); 
+
+    let dragging = false;
+    for (var p=0; p<patches.length; p++) {
+      if (patches[p].mouseDragged(mouse)) {
+        dragging = true;
+        break;
+      }
+    }
+
+    if (selector && !dragging) {
+      selector.mouseDragged(mouse); 
     }
   }
   else if (cmd) {
-    canvas.drawMask(mx, my);
+    canvas.drawMask(mouse.x, mouse.y);
   }
   else {
     trans.x = trans.x + (mouseX - pmouseX)
     trans.y = trans.y + (mouseY - pmouseY);  
   }
-
 }
 
 function mouseReleased() {
-  if (!selector) {
+  updateMouse();
+
+  let released = false;
+  for (var p=0; p<patches.length; p++) {
+    if (patches[p].mouseReleased(mouse)) {
+      released = true;
+    }
+  }
+
+  if (!selector || released) {
     return;
   }
-  var mx = (mouseX-trans.x)/zoom;
-  var my = (mouseY-trans.y)/zoom;
-  selector.mouseReleased(mx, my);
+
+  selector.mouseReleased(mouse);
   if (selector.w == 0 && selector.h == 0) {
     selector = null;
   }  
@@ -139,6 +165,9 @@ function mouseReleased() {
 
 function keyPressed() {
   console.log(key);
+  if (prompting) {
+    return;
+  }
 
   if (key == 'Shift') {
     shift = true;
@@ -149,22 +178,15 @@ function keyPressed() {
     return;
   }
 
-  if (key == 'Tab' && selector) {
-    toggleCreationTool();
-    return;
-  }
-  
-  // console.log(prompting, active);
+  // if (key == 'Tab' && selector) {
+  //   // toggleCreationTool();
+  //   return;
+  // }
 
-  if (prompting) return;
+  
   if (active == null || active ==-1) return;
   
-  
   if (key == 'Enter') {
-    console.log("PASTE")
-    //canvas.paste(patches[active]);
-
-    //patches.splice(active, 1);
   }
   else if (key == 'Backspace') {
     if (active == -1) {
@@ -176,6 +198,10 @@ function keyPressed() {
 }
 
 function keyReleased() {
+  if (prompting) {
+    return;
+  }
+
   if (key == 'Shift') {
     shift = false;
     return;
@@ -218,13 +244,14 @@ function hideCreationTool() {
   document.getElementById('creationTool').style.visibility = 'hidden';
 }
 
-function toggleCreationTool() {
-  if (prompting) {
-    hideCreationTool();
-  } else {
-    showCreationTool();
-  }
-}
+// function toggleCreationTool() {
+//   if (prompting) {
+//     hideCreationTool();
+//   } else {
+//     showCreationTool();
+//   }
+// }
+
 
 function mySubmitFunction(e) {
   e.preventDefault();

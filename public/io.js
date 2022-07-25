@@ -31,7 +31,7 @@ function receive_creation(data) {
     patch.img = img;
   }
 
-  if (data.status == 'complete') {
+  if (data.status == 'complete' && data.auto_paste) {
     canvas.paste(patch);
     var idx = patches.indexOf(patch);
     patches.splice(idx, 1);
@@ -43,14 +43,16 @@ function submitPrompt() {
   if (prompt.value == '' || !selector) {
     return;
   }
-  var newPatch = new Patch(false, false, false, null);
+  var newPatch = new Patch(null, true, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
+  newPatch.prompt = prompt.value;
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
   socket.emit('create', {
     text_input: prompt.value,
     patch_idx: patchesLookupIdx,
-    window_size: selector.window_size
+    window_size: selector.window_size,
+    auto_paste: false
   });
   patchesLookupIdx++;
   prompt.value = '';
@@ -64,7 +66,7 @@ function submitInpaint() {
   let {img_crop, img_mask} = canvas.getInpaintingData(selector);
   img_crop.resize(selector.window_size.w, selector.window_size.h);
   img_mask.resize(selector.window_size.w, selector.window_size.h);
-  var newPatch = new Patch(false, false, false, null);
+  let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
@@ -72,9 +74,20 @@ function submitInpaint() {
     image: img_crop.canvas.toDataURL("image/png"),
     mask: img_mask.canvas.toDataURL("image/png"),
     patch_idx: patchesLookupIdx,
-    window_size: selector.window_size
+    window_size: selector.window_size,
+    auto_paste: true
   });
   patchesLookupIdx++;
   selector = null;
 }
 
+function fileDropped(file) {
+  let img = createImg(file.data, successCallback = () => {
+    let newPatch = new Patch(null, true, false, false);
+    newPatch.img = img;
+    newPatch.set(mouse.x, mouse.y, img.width, img.height);
+    patchesLookup[patchesLookupIdx] = newPatch;
+    patches.push(newPatch);
+    patchesLookupIdx++;  
+  }).hide();
+}

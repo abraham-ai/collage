@@ -1,145 +1,42 @@
 
+class Patch extends MoveableObjectWithButtons {
 
-class Selection {
-
-  constructor(moveable, resizeable, forceSquare) {
-    this.moveable = moveable;
-    this.resizeable = resizeable;
-    this.forceSquare = forceSquare;    
-    this.window_size = {w:0, h:0};
-    this.s1 = {x:0, y:0};
-    this.s2 = {x:0, y:0};
-    this.anchor = {x:0, y:0};
-    this.dragging = false;
-    this.set(0, 0, 0, 0);
-  }
-      
-  set(x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.window_size.w = Math.round(this.w/64)*64;
-    this.window_size.h = Math.round(this.h/64)*64;
-  }
-  
-  setCenter(cx, cy) {
-    if (!this.moveable) return;
-    this.set(cx-this.w/2, cy-this.h/2, this.w, this.h);
-    this.s1.x = this.x;
-    this.s1.y = this.y;
-    this.s2.x = this.x+this.w;
-    this.s2.y = this.y+this.h;
-  }
-  
-  draw(active) {
-    let fontSize = min(this.h-4, 24);
-    push();
-    noStroke();
-    fill(0, 125);
-    rect(this.x, this.y, this.w, fontSize+4);
-    fill(255);
-    textSize(fontSize);
-    textAlign(CENTER);
-    text(
-      this.w+" x "+this.h+" ➔ "+this.window_size.w+ " x "+this.window_size.h, 
-      this.x+this.w/2, 
-      this.y+fontSize
-    );
-    if (active) {
-      stroke(0, 0, 255);
-      noFill();
-      strokeWeight(5);
-      rect(this.x, this.y, this.w, this.h);
-    }
-    pop();
-  }
-  
-  inside(x, y) {
-    return (
-      x>this.x && 
-      x<this.x+this.w &&
-      y>this.y && 
-      y<this.y+this.h
-    ); 
+  constructor(parent, moveable, resizeable, forceSquare) {
+    super(parent, moveable, resizeable, forceSquare);
+    this.img = null;
+    this.prompt = null;
+    var self = this;
+    let bPaste = new Button(this, "Paste", () => self.paste());
+    let bVariations = new Button(this, "Variations", () => self.variations());
+    let bDelete = new Button(this, "Delete", () => self.delete());
+    bPaste.set(5, 5, 100, 30);
+    bVariations.set(5, 40, 120, 30);
+    bDelete.set(5, 75, 120, 30);
+    this.buttons.push(bPaste);
+    this.buttons.push(bVariations);
+    this.buttons.push(bDelete);
   }
 
-  mousePressed(mx, my) {
-    if (!this.moveable) return false;
-    this.anchor.x = this.x;
-    this.anchor.y = this.y;
-    this.s1.x = mx;
-    this.s1.y = my;
-    if (this.inside(mx, my)) {
-      this.dragging = true;
+  paste() {
+    canvas.paste(this);
+  }
+
+  variations() {
+    if (this.prompt) {
+      document.getElementById("prompt").value = this.prompt;
     } 
-    else if (this.resizeable) {
-      this.s2.x = this.s1.x;
-      this.s2.y = this.s1.y;
-    }
-    return this.dragging;
+    selector = new Selection(true, true, false, null);
+    selector.set(this.x+0.25*this.w, this.y+0.25*this.h, this.w, this.h);
+    showCreationTool();
   }
 
-  mouseDragged(mx, my) {
-    if (!this.moveable) return false;
-    this.s2.x = mx;
-    this.s2.y = my;
-    if (this.dragging) {
-      this.set(
-        this.anchor.x + (this.s2.x - this.s1.x),
-        this.anchor.y + (this.s2.y - this.s1.y),
-        this.w,
-        this.h
-      )
-    } 
-    else if (this.resizeable) {  
-      if (this.forceSquare) {
-        if (abs(this.s2.x-this.s1.x) > abs(this.s2.y-this.s1.y)) {
-          let marginY = 0.5 * ((this.s2.x-this.s1.x) - (this.s2.y-this.s1.y));
-          this.set(
-            this.s1.x, 
-            this.s1.y-marginY, 
-            this.s2.x-this.s1.x, 
-            this.s2.y-this.s1.y+2*marginY
-          )
-        } 
-        else {
-          let marginX = 0.5 * ((this.s2.y-this.s1.y) - (this.s2.x-this.s1.x));
-          this.set(
-            this.s1.x-marginX, 
-            this.s1.y, 
-            this.s2.x-this.s1.x+2*marginX, 
-            this.s2.y-this.s1.y
-          )
-        }
-      }
-      else {
-        this.set(
-          this.s1.x,
-          this.s1.y,
-          this.s2.x - this.s1.x,
-          this.s2.y - this.s1.y
-        )
-      }
-    }
-    return this.dragging;
+  delete() {
+    var idx = patches.indexOf(this);
+    patches.splice(idx, 1);
   }
 
-  mouseReleased(mx, my) {
-    if (!this.moveable) return false;
-    this.dragging = false;
-  }
-}
-  
-  
-class Patch extends Selection {
-
-  constructor(moveable, resizeable, forceSquare, img) {
-    super(moveable, resizeable, forceSquare);
-    this.img = img;
-  }
-
-  draw(active) {
+  draw() {
+    // console.log("drawing do i have img?", this.img)
     push();
     if (this.img) {
       fill(255);
@@ -154,12 +51,65 @@ class Patch extends Selection {
       textAlign(CENTER);
       text(this.status, this.x+this.w/2, this.y+this.h/2)
     }
-    if (active) {
-      stroke(0, 0, 255);
-      noFill();
-      strokeWeight(5);
-      rect(this.x, this.y, this.w, this.h);
+    if (this.mouseover && this.prompt) {
+      fill(0, 155);
+      rect(this.x+2, this.y+2, this.w-4, this.h/2-2)
+      textSize(24);
+      textAlign(CENTER);
+      fill(255);
+      text(this.prompt, this.x, this.y+this.h/4, this.w, this.h/2);
     }
+    super.draw();
     pop();
   }
 }
+
+
+
+class Selection extends MoveableObjectWithButtons {
+
+  constructor(moveable, resizeable, forceSquare) {
+    super(null, moveable, resizeable, forceSquare);
+    this.window_size = {w:0, h:0};
+    let bCreate = new Button(this, "Create", this.create);
+    let bInpaint = new Button(this, "Inpaint", this.inpaint);
+    bCreate.set(5, 30, 100, 30);
+    bInpaint.set(5, 65, 120, 30);
+    this.buttons.push(bCreate);
+    this.buttons.push(bInpaint);
+  }
+
+  create() {
+    showCreationTool();
+  }
+
+  inpaint() {
+    submitInpaint();
+  }
+      
+  set(x, y, w, h) {
+    super.set(x, y, w, h);
+    this.window_size.w = Math.round(this.w/64)*64;
+    this.window_size.h = Math.round(this.h/64)*64;
+  }
+  
+  draw() {
+    let fontSize = min(this.h-4, 24);
+    push();
+    noStroke();
+    fill(0, 125);
+    rect(this.x, this.y, this.w, fontSize+4);
+    fill(255);
+    textSize(fontSize);
+    textAlign(CENTER);
+    text(
+      int(this.w)+" x "+int(this.h)+" ➔ "+this.window_size.w+ " x "+this.window_size.h, 
+      this.x+this.w/2, 
+      this.y+fontSize
+    );
+    super.draw();
+    pop();
+  }
+  
+}
+  

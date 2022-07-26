@@ -3,6 +3,9 @@
 
 var canvas;
 
+var imgIcon;
+var isFileDragging = false;
+
 var patches = [];
 var active = -1;
 
@@ -18,11 +21,15 @@ var shift = false;
 var cmd = false;
 
 
+function preload() {
+  imgIcon = loadImage("imageicon.png");
+}
 
 function setup() {
   let cp5 = createCanvas(windowWidth, windowHeight);
   cp5.drop(fileDropped);
-
+  cp5.dragOver(fileDragging);
+  
   canvas = new Canvas();
   selector = null;
   
@@ -66,12 +73,19 @@ function draw() {
   drawBackground();
   canvas.draw();
   
-  patches.forEach((patch, i) => {
-    patch.draw(active == i);
+  patches.forEach((patch) => {
+    //if (patch.status || patch.mouseover) {
+    patch.draw();
+    //}
   });
  
   if (selector) {
     selector.draw(active == -1);
+  }
+
+  if (isFileDragging){
+    imageMode(CENTER);
+    image(imgIcon, mouse.x, mouse.y);
   }
 
   pop();

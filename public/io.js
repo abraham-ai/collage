@@ -43,7 +43,8 @@ function submitPrompt() {
   if (prompt.value == '' || !selector) {
     return;
   }
-  var newPatch = new Patch(null, true, false, false);
+  //var newPatch = new Patch(null, true, false, false);
+  var newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   newPatch.prompt = prompt.value;
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -52,7 +53,7 @@ function submitPrompt() {
     text_input: prompt.value,
     patch_idx: patchesLookupIdx,
     window_size: selector.window_size,
-    auto_paste: false
+    auto_paste: true
   });
   patchesLookupIdx++;
   prompt.value = '';
@@ -83,11 +84,17 @@ function submitInpaint() {
 
 function fileDropped(file) {
   let img = createImg(file.data, successCallback = () => {
-    let newPatch = new Patch(null, true, false, false);
+    //let newPatch = new Patch(null, true, false, false);
+    let newPatch = new Patch(null, false, false, false);
     newPatch.img = img;
     newPatch.set(mouse.x, mouse.y, img.width, img.height);
     patchesLookup[patchesLookupIdx] = newPatch;
     patches.push(newPatch);
     patchesLookupIdx++;  
   }).hide();
+  isFileDragging = false;
+}
+
+function fileDragging() {
+  isFileDragging = true;
 }

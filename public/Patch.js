@@ -5,16 +5,18 @@ class Patch extends MoveableObjectWithButtons {
     super(parent, moveable, resizeable, forceSquare);
     this.img = null;
     this.prompt = null;
-    // var self = this;
-    // let bPaste = new Button(this, "Paste", () => self.paste());
-    // let bVariations = new Button(this, "Variations", () => self.variations());
-    // let bDelete = new Button(this, "Delete", () => self.delete());
-    // bPaste.set(5, 5, 100, 30);
-    // bVariations.set(5, 40, 120, 30);
-    // bDelete.set(5, 75, 120, 30);
-    // this.buttons.push(bPaste);
-    // this.buttons.push(bVariations);
-    // this.buttons.push(bDelete);
+
+
+    var self = this;
+    let bPaste = new Button(this, "Paste", () => self.paste());
+    let bVariations = new Button(this, "Variations", () => self.variations());
+    let bDelete = new Button(this, "Delete", () => self.delete());
+    bPaste.set(5, 5, 100, 30);
+    bVariations.set(5, 40, 120, 30);
+    bDelete.set(5, 75, 120, 30);
+    this.buttons.push(bPaste);
+    this.buttons.push(bVariations);
+    this.buttons.push(bDelete);
   }
 
   paste() {
@@ -128,5 +130,10 @@ class Selection extends MoveableObjectWithButtons {
     pop();
   }
   
+  mousePressed(mouse) {
+    super.checkIfButtonsPressed(mouse);
+    this.pressed = true;
+    super.mousePressed(mouse, false);
+  }
+
 }
-  

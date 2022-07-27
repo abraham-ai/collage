@@ -20,9 +20,8 @@ var prompting = false;
 var shift = false;
 var cmd = false;
 
-
 function preload() {
-  imgIcon = loadImage("imageicon.png");
+  imgIcon = loadImage("imageicon.png");  
 }
 
 function setup() {
@@ -117,7 +116,9 @@ function mousePressed() {
 
   let pressed = false;
   for (var p=0; p<patches.length; p++) {
+    console.log("tryu", p)
     if (patches[p].mousePressed(mouse)) {
+      console.log("got em", p)
       pressed = true;
       break;
     }
@@ -125,7 +126,9 @@ function mousePressed() {
 
   if (pressed) return;
 
+  
   if (!selector) {
+    console.log("make selec")
     selector = new Selection(true, true, false, null);
   }
   selector.mousePressed(mouse);
@@ -134,19 +137,14 @@ function mousePressed() {
 function mouseDragged() {
   updateMouse();
 
-  if (shift) {
-
-    
-
+  if (keyIsDown(SHIFT)) {
     trans.x = trans.x + (mouseX - pmouseX)
     trans.y = trans.y + (mouseY - pmouseY);  
-
   }
-  else if (cmd) {
+  else if (keyIsDown(CONTROL)) {
     canvas.drawMask(mouse.x, mouse.y);
   }
   else {
-
     let dragging = false;
     for (var p=0; p<patches.length; p++) {
       if (patches[p].mouseDragged(mouse)) {
@@ -154,7 +152,6 @@ function mouseDragged() {
         break;
       }
     }
-
     if (selector && !dragging) {
       selector.mouseDragged(mouse); 
     }
@@ -182,64 +179,18 @@ function mouseReleased() {
 }
 
 function keyPressed() {
-  console.log(key);
+  
   if (prompting) {
     if (key == 'Escape') {
       hideCreationTool();
     }
     return;
   }
-
-  if (key == 'Shift') {
-    shift = true;
-    return;
-  } 
-  else if (key == 'Meta') {
-    cmd = true;
-    return;
-  }
-
-  // if (key == 'Tab' && selector) {
-  //   // toggleCreationTool();
-  //   return;
-  // }
-
-  
-  if (active == null || active ==-1) return;
-  
-  if (key == 'Enter') {
-  }
-  else if (key == 'Backspace') {
-    if (active == -1) {
-      selector = null;
-    } else {
-      patches.splice(active, 1);
-    }
-  }
 }
 
 function keyReleased() {
   if (prompting) {
     return;
-  }
-
-  if (key == 'Shift') {
-    shift = false;
-    return;
-  }
-  else if (key == 'Meta') {
-    cmd = false;
-    return;
-  } 
-  else if (key == 'q') {
-    // selector = new Patch(false, true, null);
-    // selector.set((trans.x+width/2-256)/zoom, (trans.y+height/2-256)/zoom, 512, 512);
-  }
-  else if (key == 't') {
-
-  }
-  else if (key == 'w') {
-    //submitInpaint();
   }
 }
 
@@ -265,19 +216,9 @@ function hideCreationTool() {
   document.getElementById('creationTool').style.visibility = 'hidden';
 }
 
-// function toggleCreationTool() {
-//   if (prompting) {
-//     hideCreationTool();
-//   } else {
-//     showCreationTool();
-//   }
-// }
-
-
 function mySubmitFunction(e) {
   e.preventDefault();
   hideCreationTool();
   submitPrompt();
   return false;
 }
-

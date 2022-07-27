@@ -18,10 +18,10 @@ class HighlightableObject {
 
   inside(x, y) {
     return (
-      x > this.parent.x + this.x && 
-      x < this.parent.x + this.x + this.w &&
-      y > this.parent.y + this.y && 
-      y < this.parent.y + this.y + this.h
+      x >= this.parent.x + this.x && 
+      x <  this.parent.x + this.x + this.w &&
+      y >= this.parent.y + this.y && 
+      y <  this.parent.y + this.y + this.h
     ); 
   }
 
@@ -31,6 +31,8 @@ class HighlightableObject {
 
   mousePressed(mouse) {
     this.pressed = this.mouseover;
+    console.log("I AM PRESSED", this.pressed);
+    return this.pressed;
   }
 
   mouseReleased(mouse) {
@@ -50,23 +52,11 @@ class Button extends HighlightableObject {
     this.pressed = false;
   }
 
-  mousePressed(mouse) {
-    if (this.mouseover) {
-      this.pressed = true;
-    }
-    return this.pressed;
-  }
-
   mouseReleased(mouse) {
-    var released = false;
-    if (this.pressed) {
-      released = true;
-      if (this.action) {
-        this.action();
-      }
+    if (this.pressed && this.action) {
+      this.action();
     }
     this.pressed = false;
-    return released;
   }
 
   draw() {
@@ -116,6 +106,15 @@ class ObjectWithButtons extends HighlightableObject {
     this.buttons = [];
   }
 
+  checkIfButtonsPressed(mouse) {
+    this.buttonPressed = false;
+    for (var b=0; b<this.buttons.length; b++) {
+      if (this.buttons[b].mousePressed(mouse)) {
+        this.buttonPressed = true;
+      }
+    }
+  }
+
   mouseMoved(mouse) {
     super.mouseMoved(mouse);
     for (var b=0; b<this.buttons.length; b++) {
@@ -124,29 +123,17 @@ class ObjectWithButtons extends HighlightableObject {
   }
 
   mousePressed(mouse) {
-    var pressed = false;
-    for (var b=0; b<this.buttons.length; b++) {
-      if (this.buttons[b].mousePressed(mouse)) {
-        pressed = true;
-      }
-    }
-    if (!pressed) {
-      pressed = super.mousePressed(mouse);
-    }
-    return pressed;
+    super.mousePressed(mouse);
+    this.checkIfButtonsPressed(mouse);
+    return this.pressed;
   }
 
   mouseReleased(mouse) {
-    var released = false;
+    this.buttonPressed = false;
+    super.mouseReleased(mouse);
     for (var b=0; b<this.buttons.length; b++) {
-      if (this.buttons[b].mouseReleased(mouse)) {
-        released = true;
-      }
+      this.buttons[b].mouseReleased(mouse);
     }
-    if (!released) {
-      released = super.mouseReleased(mouse);
-    }
-    return released;
   }
 
 }
@@ -155,9 +142,9 @@ class ObjectWithButtons extends HighlightableObject {
 class MoveableObjectWithButtons extends ObjectWithButtons {
   
   
-  constructor(parent, moveable, resizeable, forceSquare, styles=null) {
+  constructor(parent, moveable, resizeable, forceSquare, style=null) {
     
-    const defaultStyles = {
+    const defaultStyle = {
       borderColor: color(100),
       borderColorHighlighted: color(0, 250, 0),
       borderWidth: 5
@@ -167,7 +154,7 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     this.moveable = moveable;
     this.resizeable = resizeable;
     this.forceSquare = forceSquare;
-    this.styles = styles || defaultStyles;
+    this.style = style || defaultStyle;
     this.s1 = {x:0, y:0};
     this.s2 = {x:0, y:0};
     this.anchor = {x:0, y:0};
@@ -179,35 +166,40 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
       for (var b=0; b<this.buttons.length; b++) {
         this.buttons[b].draw();
       }
-      stroke(this.styles.borderColorHighlighted);
+      stroke(this.style.borderColorHighlighted);
     } else {
-      stroke(this.styles.borderColor);
+      stroke(this.style.borderColor);
     }
     noFill();
-    strokeWeight(this.styles.borderWidth);
+    strokeWeight(this.style.borderWidth);
     rect(this.x, this.y, this.w, this.h);
   }
 
-  mousePressed(mouse) {
-    var pressed = super.mousePressed(mouse);
-    if (pressed || !this.moveable) return pressed;
-
-    this.anchor.x = this.x;
-    this.anchor.y = this.y;
-    this.s1.x = mouse.x;
-    this.s1.y = mouse.y;
-    if (this.mouseover) {
-      this.dragging = true;
-    } 
-    else if (this.resizeable) {
-      this.s2.x = this.s1.x;
-      this.s2.y = this.s1.y;
+  mousePressed(mouse, callSuper=true) {   
+    if (callSuper) {
+      super.mousePressed(mouse);
     }
-    return this.dragging;
+    console.log("mp1", this.pressed, this.buttonPressed)
+    if (this.pressed && this.moveable && !this.buttonPressed){
+      this.anchor.x = this.x;
+      this.anchor.y = this.y;
+      this.s1.x = mouse.x;
+      this.s1.y = mouse.y;
+      if (this.mouseover) {
+        this.dragging = true;
+      } 
+      else if (this.resizeable) {
+        this.s2.x = this.s1.x;
+        this.s2.y = this.s1.y;
+      }
+    }
+    return this.pressed;
   }
 
   mouseDragged(mouse) {
     if (!this.moveable) return false;
+    if (!this.pressed) return false;    
+    if (this.buttonPressed) return false;
 
     this.s2.x = mouse.x;
     this.s2.y = mouse.y;
@@ -251,13 +243,13 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
         )
       }
     }
-    return this.dragging;
   }
 
   mouseReleased(mouse) {
-    var released = super.mouseReleased(mouse);
+    //var released = super.mouseReleased(mouse);
+    super.mouseReleased(mouse);
     this.dragging = false;
-    if (released || !this.moveable) return released;
+    //if (released || !this.moveable) return released;
   }
 
 }

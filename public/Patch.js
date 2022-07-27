@@ -52,26 +52,30 @@ class Patch extends MoveableObjectWithButtons {
     //   text(this.status, this.x+this.w/2, this.y+this.h/2)
     // }
     //if (this.mouseover && this.prompt) {
-    console.log(this.w * this.h / (125 * this.prompt.length));
-    let fontSize = constrain(this.w * this.h / (125 * this.prompt.length), 16, 40);
     
-    textSize(fontSize);
-    textAlign(CENTER);
-    
-    let statusWidth = textWidth(this.prompt);
-    let numRows = Math.ceil(statusWidth/this.w) + 1;
-    
-    fill(0, 155);
-    
-    rect(this.x+2, this.y+this.h/4, this.w-4, this.h/2);
-    fill(255);
-    text(
-      this.prompt+"\n"+this.status, 
-      this.x, 
-      this.y + this.h/2 - fontSize * (0.5 + 0.5 * numRows), 
-      this.w, 
-      this.h/2);
-    //}
+    if (this.prompt) {
+      console.log(this.w * this.h / (125 * this.prompt.length));
+      let fontSize = constrain(this.w * this.h / (125 * this.prompt.length), 16, 40);
+      
+      textSize(fontSize);
+      textAlign(CENTER);
+      
+      let statusWidth = textWidth(this.prompt);
+      let numRows = Math.ceil(statusWidth/this.w) + 1;
+      
+      fill(0, 155);
+      
+      rect(this.x+2, this.y+this.h/4, this.w-4, this.h/2);
+      fill(255);
+      text(
+        this.prompt+"\n"+this.status, 
+        this.x, 
+        this.y + this.h/2 - fontSize * (0.5 + 0.5 * numRows), 
+        this.w, 
+        this.h/2
+      );
+    }
+      //}
     super.draw();
     pop();
   }

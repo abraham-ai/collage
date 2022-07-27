@@ -153,12 +153,21 @@ class ObjectWithButtons extends HighlightableObject {
 
 
 class MoveableObjectWithButtons extends ObjectWithButtons {
-
-  constructor(parent, moveable, resizeable, forceSquare) {
+  
+  
+  constructor(parent, moveable, resizeable, forceSquare, styles=null) {
+    
+    const defaultStyles = {
+      borderColor: color(100),
+      borderColorHighlighted: color(0, 250, 0),
+      borderWidth: 5
+    };
+    
     super(parent);
     this.moveable = moveable;
     this.resizeable = resizeable;
-    this.forceSquare = forceSquare;    
+    this.forceSquare = forceSquare;
+    this.styles = styles || defaultStyles;
     this.s1 = {x:0, y:0};
     this.s2 = {x:0, y:0};
     this.anchor = {x:0, y:0};
@@ -170,12 +179,12 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
       for (var b=0; b<this.buttons.length; b++) {
         this.buttons[b].draw();
       }
-      stroke(0, 250, 0);
+      stroke(this.styles.borderColorHighlighted);
     } else {
-      stroke(100);
+      stroke(this.styles.borderColor);
     }
     noFill();
-    strokeWeight(5);
+    strokeWeight(this.styles.borderWidth);
     rect(this.x, this.y, this.w, this.h);
   }
 

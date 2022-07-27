@@ -136,6 +136,17 @@ function mouseDragged() {
 
   if (shift) {
 
+    
+
+    trans.x = trans.x + (mouseX - pmouseX)
+    trans.y = trans.y + (mouseY - pmouseY);  
+
+  }
+  else if (cmd) {
+    canvas.drawMask(mouse.x, mouse.y);
+  }
+  else {
+
     let dragging = false;
     for (var p=0; p<patches.length; p++) {
       if (patches[p].mouseDragged(mouse)) {
@@ -147,13 +158,6 @@ function mouseDragged() {
     if (selector && !dragging) {
       selector.mouseDragged(mouse); 
     }
-  }
-  else if (cmd) {
-    canvas.drawMask(mouse.x, mouse.y);
-  }
-  else {
-    trans.x = trans.x + (mouseX - pmouseX)
-    trans.y = trans.y + (mouseY - pmouseY);  
   }
 }
 
@@ -180,6 +184,9 @@ function mouseReleased() {
 function keyPressed() {
   console.log(key);
   if (prompting) {
+    if (key == 'Escape') {
+      hideCreationTool();
+    }
     return;
   }
 

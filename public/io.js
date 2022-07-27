@@ -3,6 +3,13 @@ var socket;
 var patchesLookup = {};
 var patchesLookupIdx = 0;
 
+
+const patchStyle = {
+  borderColor: color(100),
+  borderColorHighlighted: color(0, 250, 0),
+  borderWidth: 0
+}
+
 function setupSocket() {
   socket = io.connect();
   socket.on('creation', receive_creation);
@@ -44,7 +51,7 @@ function submitPrompt() {
     return;
   }
   //var newPatch = new Patch(null, true, false, false);
-  var newPatch = new Patch(null, false, false, false);
+  var newPatch = new Patch(null, false, false, false, patchStyle);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   newPatch.prompt = prompt.value;
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -67,7 +74,7 @@ function submitInpaint() {
   let {img_crop, img_mask} = canvas.getInpaintingData(selector);
   img_crop.resize(selector.window_size.w, selector.window_size.h);
   img_mask.resize(selector.window_size.w, selector.window_size.h);
-  let newPatch = new Patch(null, false, false, false);
+  let newPatch = new Patch(null, false, false, false, patchStyle);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
@@ -85,7 +92,7 @@ function submitInpaint() {
 function fileDropped(file) {
   let img = createImg(file.data, successCallback = () => {
     //let newPatch = new Patch(null, true, false, false);
-    let newPatch = new Patch(null, false, false, false);
+    let newPatch = new Patch(null, false, false, false, patchStyle);
     newPatch.img = img;
     newPatch.set(mouse.x, mouse.y, img.width, img.height);
     patchesLookup[patchesLookupIdx] = newPatch;

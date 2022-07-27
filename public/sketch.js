@@ -112,36 +112,36 @@ function mouseMoved() {
 }
 
 function mousePressed() {
+  if (prompting) return;
+  
   updateMouse();
 
   let pressed = false;
   for (var p=0; p<patches.length; p++) {
-    console.log("tryu", p)
     if (patches[p].mousePressed(mouse)) {
-      console.log("got em", p)
       pressed = true;
       break;
     }
   }
 
   if (pressed) return;
-
   
   if (!selector) {
-    console.log("make selec")
     selector = new Selection(true, true, false, null);
   }
   selector.mousePressed(mouse);
 }
 
 function mouseDragged() {
+  if (prompting) return;
+
   updateMouse();
 
   if (keyIsDown(SHIFT)) {
     trans.x = trans.x + (mouseX - pmouseX)
     trans.y = trans.y + (mouseY - pmouseY);  
   }
-  else if (keyIsDown(CONTROL)) {
+  else if (keyIsDown(91)) {
     canvas.drawMask(mouse.x, mouse.y);
   }
   else {
@@ -159,6 +159,8 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+  if (prompting) return;
+  
   updateMouse();
 
   let released = false;
@@ -168,18 +170,15 @@ function mouseReleased() {
     }
   }
 
-  if (!selector || released) {
-    return;
+  if (selector && !released) {
+    selector.mouseReleased(mouse);
   }
 
-  selector.mouseReleased(mouse);
-  if (selector.w == 0 && selector.h == 0) {
-    selector = null;
-  }  
+  
 }
 
 function keyPressed() {
-  
+
   if (prompting) {
     if (key == 'Escape') {
       hideCreationTool();

@@ -56,7 +56,7 @@ class Patch extends MoveableObjectWithButtons {
     //if (this.mouseover && this.prompt) {
     
     if (this.prompt) {
-      console.log(this.w * this.h / (125 * this.prompt.length));
+//      console.log(this.w * this.h / (125 * this.prompt.length));
       let fontSize = constrain(this.w * this.h / (125 * this.prompt.length), 16, 40);
       
       textSize(fontSize);
@@ -85,17 +85,25 @@ class Patch extends MoveableObjectWithButtons {
 
 
 
+
 class Selection extends MoveableObjectWithButtons {
 
   constructor(moveable, resizeable, forceSquare) {
     super(null, moveable, resizeable, forceSquare);
     this.window_size = {w:0, h:0};
+    this.buttonsAlwaysVisible = true;
     let bCreate = new Button(this, "Create", this.create);
     let bInpaint = new Button(this, "Inpaint", this.inpaint);
-    bCreate.set(5, 30, 100, 30);
-    bInpaint.set(5, 65, 120, 30);
+    let bCopy = new Button(this, "Copy", this.copy);
+    let bErase = new Button(this, "Erase", this.erase);
+    bCreate.setVisible(false);
+    bInpaint.setVisible(false);
+    bCopy.setVisible(false);
+    bErase.setVisible(false);
     this.buttons.push(bCreate);
     this.buttons.push(bInpaint);
+    this.buttons.push(bCopy);
+    this.buttons.push(bErase);
   }
 
   create() {
@@ -105,11 +113,43 @@ class Selection extends MoveableObjectWithButtons {
   inpaint() {
     submitInpaint();
   }
-      
+
+  copy() {
+    console.log("copy canvas");
+  }
+
+  erase() {
+    console.log("self delete")
+  }
+
   set(x, y, w, h) {
     super.set(x, y, w, h);
+    this.positionButtons();
     this.window_size.w = Math.round(this.w/64)*64;
     this.window_size.h = Math.round(this.h/64)*64;
+  }
+
+  positionButtons() {
+    let availArea = 0.66 * (this.w * (this.h-30));
+    let bArea = constrain(availArea / this.buttons.length, 300, 6000);
+    let bW = Math.sqrt(bArea * 4);
+    let bH = bW / 4;
+    if (availArea > (1.1 * bW * 1.2 * bH) * this.buttons.length) {
+      let cols = Math.floor((this.w-10) / (1.1 * bW));
+      let rows = Math.floor(this.buttons.length/cols);
+      let lx = 5 + (this.w - (bW * cols * 1.1)) / 2;
+      let ly = 30 + ((this.h - 30) - (rows * bH * 1.2)) / 2;
+      for (var b=0; b<this.buttons.length; b++) {
+        let x = lx + (b%cols) * bW * 1.1;
+        let y = ly + Math.floor(b/cols) * bH * 1.2;
+        this.buttons[b].setVisible(true);
+        this.buttons[b].set(x, y, bW, bH);
+      }
+    } else {
+      for (var b=0; b<this.buttons.length; b++) {
+        this.buttons[b].setVisible(false);
+      }
+    }
   }
   
   draw() {
@@ -129,7 +169,7 @@ class Selection extends MoveableObjectWithButtons {
     super.draw();
     pop();
   }
-  
+
   mousePressed(mouse) {
     super.checkIfButtonsPressed(mouse);
     this.pressed = true;

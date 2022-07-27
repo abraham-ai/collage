@@ -32,9 +32,9 @@ function receive_creation(data) {
   }
 
   if (data.status == 'complete' && data.auto_paste) {
-    // canvas.paste(patch);
-    // var idx = patches.indexOf(patch);
-    // patches.splice(idx, 1);
+    canvas.paste(patch);
+    var idx = patches.indexOf(patch);
+    patches.splice(idx, 1);
   }
 }
 
@@ -44,11 +44,16 @@ function submitPrompt() {
     return;
   }
   //var newPatch = new Patch(null, true, false, false);
-  var newPatch = new Patch(null, false, false, false);
+  
+  
+  let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
+  newPatch.borderWidth = 0;
   newPatch.prompt = prompt.value;
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
+  
+  
   socket.emit('create', {
     text_input: prompt.value,
     patch_idx: patchesLookupIdx,
@@ -67,10 +72,16 @@ function submitInpaint() {
   let {img_crop, img_mask} = canvas.getInpaintingData(selector);
   img_crop.resize(selector.window_size.w, selector.window_size.h);
   img_mask.resize(selector.window_size.w, selector.window_size.h);
+  
+  
   let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
+  newPatch.borderWidth = 0;
+  newPatch.prompt = null;
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
+
+
   socket.emit('inpaint', {
     image: img_crop.canvas.toDataURL("image/png"),
     mask: img_mask.canvas.toDataURL("image/png"),
@@ -84,7 +95,6 @@ function submitInpaint() {
 
 function fileDropped(file) {
   let img = createImg(file.data, successCallback = () => {
-    //let newPatch = new Patch(null, true, false, false);
     let newPatch = new Patch(null, true, false, false);
     newPatch.img = img;
     newPatch.set(mouse.x, mouse.y, img.width, img.height);

@@ -7,13 +7,13 @@ class Patch extends MoveableObjectWithButtons {
     this.prompt = null;
   }
 
-  setupButtons(optPaste, optVary, optDelete) {
+  setupButtons(optStamp, optVary, optDelete) {
     const self = this;
     let y = 5;
-    if (optPaste) {
-      let bPaste = new Button(this, "Paste", () => self.paste());
-      bPaste.set(5, 5, 120, 30);
-      this.buttons.push(bPaste);
+    if (optStamp) {
+      let bStamp = new Button(this, "Stamp", () => self.stamp());
+      bStamp.set(5, 5, 120, 30);
+      this.buttons.push(bStamp);
       y += 35;
     }
     if (optVary) {
@@ -30,13 +30,8 @@ class Patch extends MoveableObjectWithButtons {
     }
   }
 
-  // set(x, y, w, h) {
-  //   super.set(x, y, w, h);
-  //   this.positionButtons();
-  // }
-
-  paste() {
-    canvas.paste(this);
+  stamp() {
+    canvas.stamp(this);
   }
 
   variations() {
@@ -54,7 +49,6 @@ class Patch extends MoveableObjectWithButtons {
   }
 
   draw() {
-    // console.log("drawing do i have img?", this.img)
     push();
     if (this.img) {
       fill(255);
@@ -63,110 +57,24 @@ class Patch extends MoveableObjectWithButtons {
       fill(255, 100);
       rect(this.x, this.y, this.w, this.h);
     }
-    // if (this.status) {
-    //   fill(0);
-    //   textSize(24);
-    //   textAlign(CENTER);
-    //   text(this.status, this.x+this.w/2, this.y+this.h/2)
-    // }
-    //if (this.mouseover && this.prompt) {
-    
     if (this.prompt) {
-//      console.log(this.w * this.h / (125 * this.prompt.length));
       let fontSize = constrain(this.w * this.h / (125 * this.prompt.length), 16, 40);
-      
       textSize(fontSize);
-      textAlign(CENTER);
-      
+      textAlign(CENTER);      
       let statusWidth = textWidth(this.prompt);
-      let numRows = Math.ceil(statusWidth/this.w) + 1;
-      
-      fill(0, 155);
-      
-      rect(this.x+2, this.y+this.h/4, this.w-4, this.h/2);
+      let numRows = Math.ceil(statusWidth/this.w) + 1;      
+      fill(0, 155);      
+      rect(this.x + this.w * 0.1, this.y + this.h * 0.25, this.w * 0.8, this.h * 0.5);
       fill(255);
       text(
-        this.prompt+"\n"+this.status, 
-        this.x, 
-        this.y + this.h/2 - fontSize * (0.5 + 0.5 * numRows), 
-        this.w, 
-        this.h/2
+        this.prompt + (this.status ? "\n" + this.status : ""),
+        this.x + this.w * 0.12, 
+        this.y + this.h * 0.5 - fontSize * (0.5 + 0.5 * numRows), 
+        this.w * 0.76, 
+        this.h * 0.5
       );
     }
-      //}
     super.draw();
     pop();
   }
-}
-
-
-
-
-class Selection extends MoveableObjectWithButtons {
-
-  constructor(moveable, resizeable, forceSquare) {
-    super(null, moveable, resizeable, forceSquare);
-    this.window_size = {w:0, h:0};
-    this.buttonsAlwaysVisible = true;
-    let bCreate = new Button(this, "Create", this.create);
-    let bInpaint = new Button(this, "Inpaint", this.inpaint);
-    let bCopy = new Button(this, "Copy", this.copy);
-    let bErase = new Button(this, "Erase", this.erase);
-    bCreate.setVisible(false);
-    bInpaint.setVisible(false);
-    bCopy.setVisible(false);
-    bErase.setVisible(false);
-    this.buttons.push(bCreate);
-    this.buttons.push(bInpaint);
-    this.buttons.push(bCopy);
-    this.buttons.push(bErase);
-  }
-
-  create() {
-    showCreationTool();
-  }
-
-  inpaint() {
-    submitInpaint();
-  }
-
-  copy() {
-    createCopy();
-  }
-
-  erase() {
-    console.log("self delete")
-  }
-
-  set(x, y, w, h) {
-    super.set(x, y, w, h);
-    this.positionButtons();
-    this.window_size.w = Math.round(this.w/64)*64;
-    this.window_size.h = Math.round(this.h/64)*64;
-  }
-  
-  draw() {
-    let fontSize = min(this.h-4, 24);
-    push();
-    noStroke();
-    fill(0, 125);
-    rect(this.x, this.y, this.w, fontSize+4);
-    fill(255);
-    textSize(fontSize);
-    textAlign(CENTER);
-    text(
-      int(this.w)+" x "+int(this.h)+" ➔ "+this.window_size.w+ " x "+this.window_size.h, 
-      this.x+this.w/2, 
-      this.y+fontSize
-    );
-    super.draw();
-    pop();
-  }
-
-  mousePressed(mouse) {
-    super.checkIfButtonsPressed(mouse);
-    this.pressed = true;
-    super.mousePressed(mouse, false);
-  }
-
 }

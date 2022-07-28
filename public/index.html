@@ -4,6 +4,7 @@
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
     <script type="text/javascript" src="GUIElements.js"></script>
     <script type="text/javascript" src="Patch.js"></script>
+    <script type="text/javascript" src="Selection.js"></script>
     <script type="text/javascript" src="Canvas.js"></script>
     <script type="text/javascript" src="io.js"></script>
     <script type="text/javascript" src="sketch.js"></script>
@@ -20,14 +21,11 @@
     </div>
 
     <div id="help">
-      to make a selection, hold down shift key and drag the mouse. Create button to bring up prompt dialog. Inpaint button to inpaint. To use erase tool, hold down command/meta key
+      <p>Make a selection by dragging the mouse. Then create, inpaint, or copy the selection.</p>
+      <p>You can also drag and drop an image from your filesystem onto the canvas.</p>
+      <p>When you drag/drop, or copy a selection, you will get a "Stamp" which is not initially on the canvas (it has a red border). You can drag it around and stamp it onto the canvas.</p>
+      <p>You can use the erase tool by dragging the mouse over the canvas while holding the COMMAND key.</p>
       <a id="closeLink" href="#" onclick="hideCreationTool();hideHelp();return false;"><img id="closeicon" src="close.png"></a>
-    </div>
-
-    <div id="menu">
-      <!-- <button onclick="toggleCreationTool()">Create</button> -->
-      <!-- <button onclick="submitInpaint()">Inpaint</button> -->
-      <!-- <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button> -->
     </div>
 
   </body>
@@ -50,11 +48,14 @@
         margin-right: auto; 
         padding: 30px;
         width: 720px;
-        height: 250px;
+        /* height: 250px; */
         font-size: 36px;
         text-align: center;
         font-family: 'Helvetica';
         border: #333 solid 4px;
+      }
+      #help {
+        font-size: 24px;
       }
       #creationTool textarea, input {
         font-size: 24px;
@@ -64,22 +65,6 @@
       }
       #submittext {
         background-color: #ccc;
-      }
-      #menu {
-        color: #fff;
-        background-color: rgba(0, 0, 0, 0.75);
-        position: absolute; 
-        left: 1px; 
-        top: 2px; 
-        padding: 0px;
-        margin: 0px;
-        /* font-size: 36px; */
-        text-align: center;
-        font-family: 'Helvetica';
-        border: #333 solid 4px;
-      }
-      #menu button {
-        font-size: 1.25em;
       }
       #closeicon {
         position: absolute;

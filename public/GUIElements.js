@@ -180,7 +180,7 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     let bW = Math.sqrt(bArea * 4);
     let bH = bW / 4;
     if (availArea > (1.1 * bW * 1.2 * bH) * this.buttons.length) {
-      let cols = Math.floor((this.w-10) / (1.1 * bW));
+      let cols = min(this.buttons.length, Math.floor((this.w-10) / (1.1 * bW)));
       let rows = Math.floor(this.buttons.length/cols);
       let lx = 5 + (this.w - (bW * cols * 1.1)) / 2;
       let ly = 30 + ((this.h - 30) - (rows * bH * 1.2)) / 2;

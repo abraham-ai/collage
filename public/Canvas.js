@@ -7,7 +7,7 @@ class Canvas {
     this.pgMask = null;
   }
       
-  paste(patch) {
+  stamp(patch) {
     let minx = min(this.min.x, patch.x);
     let miny = min(this.min.y, patch.y);
     let maxx = max(this.max.x, patch.x+patch.w);
@@ -90,7 +90,6 @@ class Canvas {
   }
 
   save(filename) {
-    console.log("save", filename)
     this.pg.get().save(filename);
   }
 

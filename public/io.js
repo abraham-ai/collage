@@ -29,10 +29,11 @@ function receive_creation(data) {
     img.drawingContext.drawImage(pimg, 0, 0);
     img.resize(patch.w, patch.h)
     patch.img = img;
+    canvas.stamp(patch);
   }
 
-  if (data.status == 'complete' && data.auto_paste) {
-    canvas.paste(patch);
+  if (data.status == 'complete' && data.auto_stamp) {
+    canvas.stamp(patch);
     var idx = patches.indexOf(patch);
     patches.splice(idx, 1);
   }
@@ -59,7 +60,7 @@ function submitPrompt() {
     text_input: prompt.value,
     patch_idx: patchesLookupIdx,
     window_size: selector.window_size,
-    auto_paste: true
+    auto_stamp: true
   });
   patchesLookupIdx++;
   prompt.value = '';
@@ -91,7 +92,7 @@ function submitInpaint() {
     mask: img_mask.canvas.toDataURL("image/png"),
     patch_idx: patchesLookupIdx,
     window_size: selector.window_size,
-    auto_paste: true
+    auto_stamp: true
   });
   patchesLookupIdx++;
   selector = null;

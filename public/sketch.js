@@ -1,13 +1,14 @@
 // X copy functionality
 // x save
-// fix background 
+// x scroll zoom recenter
+// x fix background 
+// bug: copy/erase never shows up
 // status message for inpainting
 // borders (green for progress bar, vibrating hue for patch)
-// scroll zoom recenter
 // erase functionality
 // ------
+// tutorial video
 // undo/redo
-
 
 
 
@@ -23,8 +24,8 @@ var t1 = {x: 0, y: 0};
 var t2 = {x: 0, y: 0};
 
 var mouseRaw = {x: 0, y: 0};
-var zoomLevel;
-var zoom;
+var zoomLevel = 100;
+var zoom = 1;
 
 var overlay = false;
 var shift = false;
@@ -46,22 +47,22 @@ function setup() {
   canvas = new Canvas();
   selector = null;
   
-  setZoomLevel(100);
+  setZoomLevel(zoomLevel);
   setupSocket();
   setupMenu();
 }
 
 function setupMenu() {
-  let bSave = new Button(null, "Save", this.save);
-  let bUndo = new Button(null, "Undo", this.undo);
+  let bSave = new Button(null, "Save", this.exportCanvas);
+  //let bUndo = new Button(null, "Undo", this.undo);
   let bHelp = new Button(null, "Help", this.help);
   bSave.set(5, 5, 120, 30);
-  bUndo.set(130, 5, 120, 30);
-  bHelp.set(255, 5, 120, 30);
-  menu = [bSave, bUndo, bHelp];
+  // bUndo.set(130, 5, 120, 30);
+  bHelp.set(/*255*/130, 5, 120, 30);
+  menu = [bSave, /*bUndo,*/ bHelp];
 }
 
-function save() {
+function exportCanvas() {
   canvas.save("Canvas.png");
 }
 
@@ -74,39 +75,34 @@ function help() {
 }
 
 function drawBackground() {
-  var margin = 20;
+  var margin = 24;
+
   var x1 = -trans.x/zoom;
   var y1 = -trans.y/zoom;
   var x2 = (width-trans.x)/zoom;
   var y2 = (height-trans.y)/zoom;
-  x2 += margin;
-  y2 += margin;
-  var filledy = false;
-  for (var y=y1; y<y2; y+=margin) {
-    //filled = j % 2 == 0;
+
+  var left = Math.ceil(x1 / margin)-1;
+  var top = Math.ceil(y1 / margin)-1;
+  var right = Math.ceil(x2 / margin)+1;
+  var bottom = Math.ceil(y2 / margin)+1;
+
+  var filledy = (left+(top%2))%2 == 0;
+  for (var j=top; j<bottom; j++) {
     filledy = !filledy;
-    filled = filledy;
-    for (var x=x1; x<x2; x+=margin) {
+    let filled = filledy;
+    for (var i=left; i<right; i++) {
+      var x = i * margin;
+      var y = j * margin;
       noStroke();
       fill(filled ? 155 : 225, 100);
-      rect(x, y, margin, margin);
+      rect(x, y, margin, margin)
       filled = !filled;
     }
   }
-
-  push();
-  fill(255, 0, 0);
-  ellipse(trans.x, trans.y, 40*sin(2+frameCount*0.01));
-  fill(0, 0, 255);
-  ellipse(x1, y1, 30*sin(frameCount*0.01));
-  ellipse(x2, y2, 30*cos(frameCount*0.01));
-  pop();
 }
 
 function draw() {
-
-  //console.log("pr "+prompting+ " shift "+shift + " cmd "+cmd);
-
   background(255);
  
   push();
@@ -141,6 +137,8 @@ function draw() {
 function setZoomLevel(z) {
   zoomLevel = constrain(z, 0, 120);
   zoom = 0.01 * pow(100, zoomLevel/100.0);
+  trans.x = mouseRaw.x - mouse.x * zoom;
+  trans.y = mouseRaw.y - mouse.y * zoom;
 }
 
 function updateMouse() {
@@ -179,6 +177,12 @@ function mousePressed() {
     return;
   }
 
+  if (selector) {
+    if (selector.mousePressed(mouse)) {
+      return;
+    }
+  }
+  
   for (var b=0; b<menu.length; b++) {
     if (menu[b].mousePressed(mouseRaw)) {
       return;
@@ -212,13 +216,13 @@ function mouseDragged() {
     canvas.drawMask(mouse.x, mouse.y);
   }
   else {
+    if (selector) {
+      selector.mouseDragged(mouse); 
+    }
     for (var p=0; p<patches.length; p++) {
       if (patches[p].mouseDragged(mouse)) {
         return;
       }
-    }
-    if (selector) {// && !dragging) {
-      selector.mouseDragged(mouse); 
     }
   }
 }
@@ -227,7 +231,11 @@ function mouseReleased() {
   if (overlay) return;
   
   updateMouse();
-  
+
+  if (selector) {
+    selector.mouseReleased(mouse);
+  }
+
   for (var b=0; b<menu.length; b++) {
     menu[b].mouseReleased(mouseRaw);
   }
@@ -236,9 +244,6 @@ function mouseReleased() {
     patches[p].mouseReleased(mouse);
   }
 
-  if (selector) {
-    selector.mouseReleased(mouse);
-  }
 }
 
 function keyPressed() {

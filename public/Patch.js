@@ -5,19 +5,35 @@ class Patch extends MoveableObjectWithButtons {
     super(parent, moveable, resizeable, forceSquare);
     this.img = null;
     this.prompt = null;
-
-
-    var self = this;
-    let bPaste = new Button(this, "Paste", () => self.paste());
-    let bVariations = new Button(this, "Variations", () => self.variations());
-    let bDelete = new Button(this, "Delete", () => self.delete());
-    bPaste.set(5, 5, 100, 30);
-    bVariations.set(5, 40, 120, 30);
-    bDelete.set(5, 75, 120, 30);
-    this.buttons.push(bPaste);
-    this.buttons.push(bVariations);
-    this.buttons.push(bDelete);
   }
+
+  setupButtons(optPaste, optVary, optDelete) {
+    const self = this;
+    let y = 5;
+    if (optPaste) {
+      let bPaste = new Button(this, "Paste", () => self.paste());
+      bPaste.set(5, 5, 120, 30);
+      this.buttons.push(bPaste);
+      y += 35;
+    }
+    if (optVary) {
+      let bVariations = new Button(this, "Variations", () => self.variations());
+      bVariations.set(5, y, 120, 30);
+      this.buttons.push(bVariations);
+      y += 35;
+    }
+    if (optDelete) {
+      let bDelete = new Button(this, "Delete", () => self.delete());
+      bDelete.set(5, y, 120, 30);    
+      this.buttons.push(bDelete);
+      y += 35;
+    }
+  }
+
+  // set(x, y, w, h) {
+  //   super.set(x, y, w, h);
+  //   this.positionButtons();
+  // }
 
   paste() {
     canvas.paste(this);
@@ -28,7 +44,7 @@ class Patch extends MoveableObjectWithButtons {
       document.getElementById("prompt").value = this.prompt;
     } 
     selector = new Selection(true, true, false, null);
-    selector.set(this.x+0.25*this.w, this.y+0.25*this.h, this.w, this.h);
+    selector.set(this.x+0.15*this.w, this.y+0.15*this.h, this.w, this.h);
     showCreationTool();
   }
 
@@ -115,7 +131,7 @@ class Selection extends MoveableObjectWithButtons {
   }
 
   copy() {
-    console.log("copy canvas");
+    createCopy();
   }
 
   erase() {
@@ -127,29 +143,6 @@ class Selection extends MoveableObjectWithButtons {
     this.positionButtons();
     this.window_size.w = Math.round(this.w/64)*64;
     this.window_size.h = Math.round(this.h/64)*64;
-  }
-
-  positionButtons() {
-    let availArea = 0.66 * (this.w * (this.h-30));
-    let bArea = constrain(availArea / this.buttons.length, 300, 6000);
-    let bW = Math.sqrt(bArea * 4);
-    let bH = bW / 4;
-    if (availArea > (1.1 * bW * 1.2 * bH) * this.buttons.length) {
-      let cols = Math.floor((this.w-10) / (1.1 * bW));
-      let rows = Math.floor(this.buttons.length/cols);
-      let lx = 5 + (this.w - (bW * cols * 1.1)) / 2;
-      let ly = 30 + ((this.h - 30) - (rows * bH * 1.2)) / 2;
-      for (var b=0; b<this.buttons.length; b++) {
-        let x = lx + (b%cols) * bW * 1.1;
-        let y = ly + Math.floor(b/cols) * bH * 1.2;
-        this.buttons[b].setVisible(true);
-        this.buttons[b].set(x, y, bW, bH);
-      }
-    } else {
-      for (var b=0; b<this.buttons.length; b++) {
-        this.buttons[b].setVisible(false);
-      }
-    }
   }
   
   draw() {

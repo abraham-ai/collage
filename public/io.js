@@ -48,6 +48,7 @@ function submitPrompt() {
   
   let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
+  newPatch.setButtonsVisible(false);
   newPatch.borderWidth = 0;
   newPatch.prompt = prompt.value;
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -69,13 +70,16 @@ function submitInpaint() {
   if (!selector) {
     return;
   }
-  let {img_crop, img_mask} = canvas.getInpaintingData(selector);
+  let img_crop = canvas.getImageSelection(selector);
+  let img_mask = canvas.getMaskSelection(selector);
+
   img_crop.resize(selector.window_size.w, selector.window_size.h);
   img_mask.resize(selector.window_size.w, selector.window_size.h);
   
   
   let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
+  newPatch.setButtonsVisible(false);
   newPatch.borderWidth = 0;
   newPatch.prompt = null;
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -93,11 +97,29 @@ function submitInpaint() {
   selector = null;
 }
 
+function createCopy() {
+  if (!selector) {
+    return;
+  }
+  let img_crop = canvas.getImageSelection(selector);  
+  let newPatch = new Patch(null, true, false, false);
+  newPatch.set(selector.x+30, selector.y+30, selector.w, selector.h);
+  newPatch.img = img_crop;
+  newPatch.setupButtons(true, false, true);
+  newPatch.positionButtons();
+  patchesLookup[patchesLookupIdx] = newPatch;
+  patches.push(newPatch);
+  patchesLookupIdx++;  
+  selector = null;
+}
+
 function fileDropped(file) {
   let img = createImg(file.data, successCallback = () => {
     let newPatch = new Patch(null, true, false, false);
     newPatch.img = img;
     newPatch.set(mouse.x, mouse.y, img.width, img.height);
+    newPatch.setupButtons(true, false, true);
+    newPatch.positionButtons();
     patchesLookup[patchesLookupIdx] = newPatch;
     patches.push(newPatch);
     patchesLookupIdx++;  

@@ -11,7 +11,7 @@
   <body>
 
     <div id="creationTool">
-      <form onsubmit="return mySubmitFunction(event)">
+      <form onsubmit="mySubmitFunction(event);return false">
         <b>Prompt</b>
         <input id="prompt" name="prompt"></input>
         <input id="submittext" type="submit" value="Submit">
@@ -19,10 +19,15 @@
       <a id="closeLink" href="#" onclick="hideCreationTool();return false;"><img id="closeicon" src="close.png"></a>
     </div>
 
+    <div id="help">
+      to make a selection, hold down shift key and drag the mouse. Create button to bring up prompt dialog. Inpaint button to inpaint. To use erase tool, hold down command/meta key
+      <a id="closeLink" href="#" onclick="hideCreationTool();hideHelp();return false;"><img id="closeicon" src="close.png"></a>
+    </div>
+
     <div id="menu">
       <!-- <button onclick="toggleCreationTool()">Create</button> -->
       <!-- <button onclick="submitInpaint()">Inpaint</button> -->
-      <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button>
+      <!-- <button onclick="alert('to make a selection, hold down shift key and drag the mouse.\n\Create button to bring up prompt dialog.\nInpaint button to inpaint.\nTo use erase tool, hold down command/meta key')">Help</button> -->
     </div>
 
   </body>
@@ -33,7 +38,7 @@
         padding:0;
       }
       
-      #creationTool {
+      #creationTool, #help {
         visibility: hidden;
         color: #fff;
         background-color: rgba(0, 0, 0, 0.75);

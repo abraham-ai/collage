@@ -59,17 +59,20 @@ class Canvas {
     this.pgMask.noErase();
   }
 
-  getInpaintingData(selector) {
-    let x = selector.x - this.min.x;
-    let y = selector.y - this.min.y;
-    let w = max(0, selector.x + selector.w - this.max.x);
-    let h = max(0, selector.y + selector.h - this.max.y);
-
+  getImageSelection(selector) {
     let img_crop = this.pg.get(
       selector.x - this.min.x, 
       selector.y - this.min.y, 
       selector.w, selector.h
     );
+    return img_crop;
+  }
+
+  getMaskSelection(selector) {
+    let x = selector.x - this.min.x;
+    let y = selector.y - this.min.y;
+    let w = max(0, selector.x + selector.w - this.max.x);
+    let h = max(0, selector.y + selector.h - this.max.y);
 
     let img_mask = this.pgMask.get(
       max(0, x), 
@@ -83,7 +86,12 @@ class Canvas {
 
     img_mask = pgMaskWhite.get(0, 0, selector.w, selector.h);
 
-    return {img_crop, img_mask}
+    return img_mask;
+  }
+
+  save(filename) {
+    console.log("save", filename)
+    this.pg.get().save(filename);
   }
 
 }

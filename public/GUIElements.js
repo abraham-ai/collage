@@ -31,7 +31,6 @@ class HighlightableObject {
 
   mousePressed(mouse) {
     this.pressed = this.mouseover;
-    console.log("I AM PRESSED", this.pressed);
     return this.pressed;
   }
 
@@ -40,7 +39,6 @@ class HighlightableObject {
   }
 
 }
-
 
 
 class Button extends HighlightableObject {
@@ -116,7 +114,6 @@ class Button extends HighlightableObject {
 }
 
 
-
 class ObjectWithButtons extends HighlightableObject {
 
   constructor(parent) {
@@ -177,6 +174,35 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     this.buttonsAlwaysVisible = false;
   }
 
+  positionButtons() {
+    let availArea = 0.66 * (this.w * (this.h-30));
+    let bArea = constrain(availArea / this.buttons.length, 300, 6000);
+    let bW = Math.sqrt(bArea * 4);
+    let bH = bW / 4;
+    if (availArea > (1.1 * bW * 1.2 * bH) * this.buttons.length) {
+      let cols = Math.floor((this.w-10) / (1.1 * bW));
+      let rows = Math.floor(this.buttons.length/cols);
+      let lx = 5 + (this.w - (bW * cols * 1.1)) / 2;
+      let ly = 30 + ((this.h - 30) - (rows * bH * 1.2)) / 2;
+      for (var b=0; b<this.buttons.length; b++) {
+        let x = lx + (b%cols) * bW * 1.1;
+        let y = ly + Math.floor(b/cols) * bH * 1.2;
+        this.buttons[b].setVisible(true);
+        this.buttons[b].set(x, y, bW, bH);
+      }
+    } else {
+      for (var b=0; b<this.buttons.length; b++) {
+        this.buttons[b].setVisible(false);
+      }
+    }
+  }
+
+  setButtonsVisible(visible) {
+    for (var b=0; b<this.buttons.length; b++) {
+      this.buttons[b].setVisible(visible);
+    }
+  }
+
   draw() {
     if (this.mouseover || this.buttonsAlwaysVisible) {
       for (var b=0; b<this.buttons.length; b++) {
@@ -194,7 +220,6 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
   }
 
   mousePressed(mouse, callSuper=true) {   
-    console.log("PRESS")
     if (callSuper) {
       super.mousePressed(mouse);
     }
@@ -251,7 +276,6 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
   }
 
   mouseReleased(mouse) {
-    console.log("RELEASe")
     super.mouseReleased(mouse);
     this.dragging = false;
   }

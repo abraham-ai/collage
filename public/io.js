@@ -99,7 +99,7 @@ function submitInpaint() {
 }
 
 function createCopy() {
-  if (!selector) {
+  if (!selector || !canvas.pg) {
     return;
   }
   let img_crop = canvas.getImageSelection(selector);  

@@ -4,20 +4,21 @@ class Selection extends MoveableObjectWithButtons {
     super(null, moveable, resizeable, forceSquare);
     this.window_size = {w:0, h:0};
     this.buttonsAlwaysVisible = true;
-    let bCreate = new Button(this, "Create", this.create);
-    let bInpaint = new Button(this, "Inpaint", this.inpaint);
-    let bCopy = new Button(this, "Copy", this.copy);
-    let bErase = new Button(this, "Erase", this.erase);
-    bCreate.setVisible(false);
-    bInpaint.setVisible(false);
-    bCopy.setVisible(false);
-    bErase.setVisible(false);
-    this.buttons.push(bCreate);
-    this.buttons.push(bInpaint);
-    if (canvas.pg) {
-      this.buttons.push(bCopy);
-      this.buttons.push(bErase);
-    }
+    
+    this.bCreate = new Button(this, "Create", this.create);
+    this.bInpaint = new Button(this, "Inpaint", this.inpaint);
+    this.bCopy = new Button(this, "Copy", this.copy);
+    this.bErase = new Button(this, "Erase", this.erase);
+    
+    this.bCreate.setVisible(false);
+    this.bInpaint.setVisible(false);
+    this.bCopy.setVisible(false);
+    this.bErase.setVisible(false);
+    
+    this.buttons.push(this.bCreate);
+    this.buttons.push(this.bInpaint);
+    this.buttons.push(this.bCopy);
+    this.buttons.push(this.bErase);
   }
 
   create() {
@@ -41,6 +42,14 @@ class Selection extends MoveableObjectWithButtons {
     this.positionButtons();
     this.window_size.w = Math.round(this.w/64)*64;
     this.window_size.h = Math.round(this.h/64)*64;
+  }
+
+  positionButtons() {
+    super.positionButtons();
+    if (!canvas.pg) {
+      this.bCopy.setVisible(false);
+      this.bErase.setVisible(false);
+    }
   }
   
   draw() {

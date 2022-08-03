@@ -24,21 +24,14 @@ io.on('connection', (socket) => {
 
   async function run_generator_update(task_id, patch_idx, auto_stamp) {
     let results = await axios.post(`${generator_url}/fetch`, {token: task_id});
-    let status = results.data.status.status;
-
-    console.log(results.data.status);
-    // console.log(results.data)
-
+    let status = results.data.status;
     let output = {patch_idx: patch_idx, status: status, auto_stamp: auto_stamp}
     let intermediateCreation = null;
-    if (status == 'complete') {
+    if (status.status == 'complete') {
       let creation = results.data.output.creation;
       output.creation = creation.data;
     }
-    else if (status == 'running') {
-      let progress = results.data.status.progress;
-      progress = progress == "__none__" ? 0 : progress;
-      output.progress = progress;
+    else if (status.status == 'running') {
       if (results.data.output.intermediate_creation) {
         let newCreation = results.data.output.intermediate_creation.data;
         if (newCreation != intermediateCreation) {
@@ -48,14 +41,14 @@ io.on('connection', (socket) => {
       }
     }
     socket.emit('creation', output);
-    if (status == 'complete') {
-      return;
+    if (status.status == 'running' ||
+      status.status == 'queued' ||
+      status.status == 'pending') {
+      setTimeout(function(){
+        run_generator_update(task_id, patch_idx, auto_stamp);
+      }, 1000);
     }
-    setTimeout(function(){
-      run_generator_update(task_id, patch_idx, auto_stamp);
-    }, 1000);
   }
-
 
   socket.on('inpaint', async (data) => {
     const creation_config = {

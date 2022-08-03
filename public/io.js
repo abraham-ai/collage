@@ -10,12 +10,12 @@ function setupSocket() {
 
 function receive_creation(data) {
   let patch = patchesLookup[data.patch_idx];
-  if (data.status == 'pending') {
-    patch.status = "pending";
-  } else if (data.status == 'running') {
-    patch.status = int(100*data.progress)+"% done";
-  } else if (data.status == 'complete') {
-    patch.status = null;
+  patch.status = data.status;
+
+  if (data.status.status == 'failed') {
+    patch.buttonsAlwaysVisible = true;
+    patch.setupButtons(false, false, true);
+    patch.positionButtons();
   }
 
   if (!data.creation) {
@@ -32,7 +32,7 @@ function receive_creation(data) {
     canvas.stamp(patch);
   }
 
-  if (data.status == 'complete' && data.auto_stamp) {
+  if (data.status.status == 'complete' && data.auto_stamp) {
     canvas.stamp(patch);
     var idx = patches.indexOf(patch);
     patches.splice(idx, 1);
@@ -102,10 +102,13 @@ function createCopy() {
   if (!selector || !canvas.pg) {
     return;
   }
-  let img_crop = canvas.getImageSelection(selector);  
+  
+  let img_cropped_masked = canvas.getMaskedImageSelection(selector); 
+  
+  
   let newPatch = new Patch(null, true, false, false);
   newPatch.set(selector.x+30, selector.y+30, selector.w, selector.h);
-  newPatch.img = img_crop;
+  newPatch.img = img_cropped_masked;
   newPatch.setupButtons(true, false, true);
   newPatch.positionButtons();
   patchesLookup[patchesLookupIdx] = newPatch;
@@ -130,4 +133,8 @@ function fileDropped(file) {
 
 function fileDragging() {
   isFileDragging = true;
+}
+
+function eraseCanvasSelection() {
+  canvas.erase(selector);
 }

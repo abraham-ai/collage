@@ -2,28 +2,33 @@
 // x save
 // x scroll zoom recenter
 // x fix background 
-// bug: copy/erase never shows up
-// status message for inpainting
-// borders (green for progress bar, vibrating hue for patch)
-// erase functionality
+// x bug: copy/erase never shows up
+// x disable button option
+// x status message for inpainting
+// x borders (green for progress bar, vibrating hue for patch)
+// x erase functionality
+// x erase icon https://www.digitalocean.com/community/tutorials/css-cursor-property
+// x copy needs to use mask
+// x warning size
+// o keyboard shortcuts
 // ------
 // tutorial video
 // undo/redo
 
 
+const CREATION_AREA_MAXIMUM = 720000;
 
 var canvas = null;
 var patches = [];
 var menu = [];
 var selector = null;
 
+var mouseRaw = {x: 0, y: 0};
 var mouse = {x: 0, y: 0};
 var anchor = {x: 0, y: 0};
 var trans = {x: 0, y: 0};
 var t1 = {x: 0, y: 0};
 var t2 = {x: 0, y: 0};
-
-var mouseRaw = {x: 0, y: 0};
 var zoomLevel = 100;
 var zoom = 1;
 
@@ -33,6 +38,7 @@ var cmd = false;
 
 var imgIcon;
 var isFileDragging = false;
+var eraserSize = 64;
 
 
 function preload() {
@@ -132,6 +138,19 @@ function draw() {
     menu[b].draw();
   }
 
+  if (keyIsDown(91)) {
+    drawEraserTool(mouse);
+  }
+}
+
+function drawEraserTool(mouse) {
+  push();
+  noFill();
+  colorMode(HSB, 360, 100, 100);
+  stroke(frameCount % 360, 100, 100);
+  strokeWeight(2);
+  ellipse(mouseRaw.x, mouseRaw.y, eraserSize*zoom, eraserSize*zoom);
+  pop();
 }
 
 function setZoomLevel(z) {
@@ -146,6 +165,16 @@ function updateMouse() {
   mouseRaw.y = mouseY;
   mouse.x = (mouseX-trans.x)/zoom;
   mouse.y = (mouseY-trans.y)/zoom;
+  updateCursor();
+}
+
+function updateCursor() {
+  setCursor("auto");
+  if (keyIsDown(91)) {
+    setCursor("eraser");
+  } else if (keyIsDown(SHIFT)) {
+    setCursor("all-scroll");
+  }
 }
 
 function mouseMoved() {
@@ -216,13 +245,13 @@ function mouseDragged() {
     canvas.drawMask(mouse.x, mouse.y);
   }
   else {
-    if (selector) {
-      selector.mouseDragged(mouse); 
-    }
     for (var p=0; p<patches.length; p++) {
       if (patches[p].mouseDragged(mouse)) {
         return;
       }
+    }
+    if (selector) {
+      selector.mouseDragged(mouse); 
     }
   }
 }
@@ -247,6 +276,7 @@ function mouseReleased() {
 }
 
 function keyPressed() {
+  updateCursor();
   if (overlay) {
     if (key == 'Escape') {
       hideCreationTool();
@@ -257,6 +287,7 @@ function keyPressed() {
 }
 
 function keyReleased() {
+  updateCursor();
   if (overlay) {
     return;
   }
@@ -265,9 +296,11 @@ function keyReleased() {
 function mouseWheel(event) {
   if (event.deltaY > 0) {
     setZoomLevel(zoomLevel-1);
+    setCursor("zoom-in");
   } 
   else if (event.deltaY < 0) {
     setZoomLevel(zoomLevel+1);
+    setCursor("zoom-out")
   }
 }
 

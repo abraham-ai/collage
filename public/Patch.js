@@ -119,10 +119,9 @@ class Patch extends MoveableObjectWithButtons {
       }
       if (this.status.status == 'pending') {
         status_msg += "\nPending";
-      } else if (this.status.status == 'pending') {
+      } else if (this.status.status == 'starting') {
         status_msg += "\nStarting";
       } else if (this.status.status == 'queued') {
-        console.log(this.status)
         let queue_idx = this.status.queue_position;
         status_msg += "\nQueued #"+queue_idx;
       } else if (this.status.status == 'running') {

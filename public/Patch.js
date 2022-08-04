@@ -9,6 +9,7 @@ class Patch extends MoveableObjectWithButtons {
     this.prompt = null;
     this.status = null;
     this.progress = 0;
+    this.randomColorOffset = int(360 * Math.random());
   }
 
   setupButtons(optStamp, optVary, optDelete) {
@@ -80,7 +81,7 @@ class Patch extends MoveableObjectWithButtons {
       stroke(0, 255, 0);
     } else {
       colorMode(HSB, 360, 100, 100);
-      stroke(frameCount % 360, 100, 100);
+      stroke((frameCount + this.randomColorOffset) % 360, 100, 100);
     }
     noFill();
     if (amt1) {
@@ -109,6 +110,9 @@ class Patch extends MoveableObjectWithButtons {
     }
     if (this.status && this.status.status != 'complete') {
       let status_msg = this.prompt ? this.prompt : "Inpainting";
+      if (status_msg == "Inpainting") {
+        console.log(this.status)
+      }
       if (this.status.status == 'pending') {
         status_msg += "\nPending";
       } else if (this.status.status == 'queued') {

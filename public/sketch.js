@@ -1,19 +1,7 @@
-// X copy functionality
-// x save
-// x scroll zoom recenter
-// x fix background 
-// x bug: copy/erase never shows up
-// x disable button option
-// x status message for inpainting
-// x borders (green for progress bar, vibrating hue for patch)
-// x erase functionality
-// x erase icon https://www.digitalocean.com/community/tutorials/css-cursor-property
-// x copy needs to use mask
-// x warning size
-// o keyboard shortcuts
-// ------
+// resizing patches
 // tutorial video
 // undo/redo
+// optimization
 
 
 const CREATION_AREA_MAXIMUM = 720000;

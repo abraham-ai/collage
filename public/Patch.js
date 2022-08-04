@@ -52,6 +52,7 @@ class Patch extends MoveableObjectWithButtons {
     super.mouseMoved(mouse);
     if (this.mouseover) {
       if (this.status && (
+        this.status.status == 'starting' || 
         this.status.status == 'pending' || 
         this.status.status == 'queued' ||
         this.status.status == 'running')) {
@@ -99,6 +100,9 @@ class Patch extends MoveableObjectWithButtons {
     pop();
   }
 
+//starting
+//{status: 'invalid token'}
+
   draw() {
     push();
     if (this.img) {
@@ -115,8 +119,11 @@ class Patch extends MoveableObjectWithButtons {
       }
       if (this.status.status == 'pending') {
         status_msg += "\nPending";
+      } else if (this.status.status == 'pending') {
+        status_msg += "\nStarting";
       } else if (this.status.status == 'queued') {
-        let queue_idx = this.status.status_code;
+        console.log(this.status)
+        let queue_idx = this.status.queue_position;
         status_msg += "\nQueued #"+queue_idx;
       } else if (this.status.status == 'running') {
         if (this.status.progress == '__none__') {

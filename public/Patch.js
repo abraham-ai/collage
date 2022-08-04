@@ -114,9 +114,6 @@ class Patch extends MoveableObjectWithButtons {
     }
     if (this.status && this.status.status != 'complete') {
       let status_msg = this.prompt ? this.prompt : "Inpainting";
-      if (status_msg == "Inpainting") {
-        console.log(this.status)
-      }
       if (this.status.status == 'pending') {
         status_msg += "\nPending";
       } else if (this.status.status == 'starting') {

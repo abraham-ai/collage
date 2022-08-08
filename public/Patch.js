@@ -55,6 +55,7 @@ class Patch extends MoveableObjectWithButtons {
         this.status.status == 'starting' || 
         this.status.status == 'pending' || 
         this.status.status == 'queued' ||
+        this.status.status == 'invalid token' ||
         this.status.status == 'running')) {
           setCursor("wait");
       }
@@ -111,14 +112,7 @@ class Patch extends MoveableObjectWithButtons {
     }
     if (this.status && this.status.status != 'complete') {
       let status_msg = this.prompt ? this.prompt : "Inpainting";
-      if (this.status.status == 'pending') {
-        status_msg += "\nPending";
-      } else if (this.status.status == 'starting') {
-        status_msg += "\nStarting";
-      } else if (this.status.status == 'queued') {
-        let queue_idx = this.status.queue_position;
-        status_msg += "\nQueued #"+queue_idx;
-      } else if (this.status.status == 'running') {
+      if (this.status.status == 'running') {
         if (this.status.progress == '__none__') {
           this.status.progress = 0;
         }        
@@ -126,8 +120,17 @@ class Patch extends MoveableObjectWithButtons {
         this.progress = lerp(this.progress, progress, 0.025);
         let progress_str = int(100*this.progress);
         status_msg += "\n"+progress_str+"% done";
+      } else if (this.status.status == 'pending') {
+        status_msg += "\nPending";
+      } else if (this.status.status == 'starting') {
+        status_msg += "\nStarting";
+      } else if (this.status.status == 'queued') {
+        let queue_idx = this.status.queue_position;
+        status_msg += "\nQueued #"+queue_idx;
       } else if (this.status.status == 'failed') {
         status_msg += "\nFailed :(";
+      } else if (this.status.status == 'invalid token') {
+        status_msg += "\nInvalid token (wait)";
       }
       let fontSize = constrain(this.w * this.h / (125 * status_msg.length), 16, 40);
       this.drawProgressRect(this.progress, 0);

@@ -44,7 +44,8 @@ io.on('connection', (socket) => {
     if (status.status == 'running' ||
       status.status == 'queued' ||
       status.status == 'pending' ||
-      status.status == 'starting') {
+      status.status == 'starting' ||
+      status.status == 'invalid token') {
       setTimeout(function(){
         run_generator_update(task_id, patch_idx, auto_stamp);
       }, 1000);

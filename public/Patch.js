@@ -130,7 +130,7 @@ class Patch extends MoveableObjectWithButtons {
       } else if (this.status.status == 'failed') {
         status_msg += "\nFailed :(";
       } else if (this.status.status == 'invalid token') {
-        status_msg += "\nInvalid token (wait)";
+        status_msg += "\nWait...";
       }
       let fontSize = constrain(this.w * this.h / (125 * status_msg.length), 16, 40);
       this.drawProgressRect(this.progress, 0);

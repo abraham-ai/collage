@@ -100,9 +100,6 @@ class Patch extends MoveableObjectWithButtons {
     pop();
   }
 
-//starting
-//{status: 'invalid token'}
-
   draw() {
     push();
     if (this.img) {

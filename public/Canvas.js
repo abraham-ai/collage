@@ -1,17 +1,18 @@
 class Canvas {
 
   constructor() {
-    this.min = {x:1e8, y:1e8};
-    this.max = {x:-1e8, y:-1e8};
+    this.min = {x: 1e8, y: 1e8};
+    this.max = {x: -1e8, y: -1e8};
     this.pg = null;
     this.pgMask = null;
+    this.pgEraser = [];
   }
       
   stamp(patch) {
-    let minx = min(this.min.x, patch.x);
-    let miny = min(this.min.y, patch.y);
-    let maxx = max(this.max.x, patch.x+patch.w);
-    let maxy = max(this.max.y, patch.y+patch.h);
+    let minx = Math.round(min(this.min.x, patch.x));
+    let miny = Math.round(min(this.min.y, patch.y));
+    let maxx = Math.round(max(this.max.x, patch.x+patch.w));
+    let maxy = Math.round(max(this.max.y, patch.y+patch.h));
 
     let pgNew = createGraphics(maxx-minx, maxy-miny);
     let pgMaskNew = createGraphics(maxx-minx, maxy-miny);
@@ -36,8 +37,10 @@ class Canvas {
 
     this.pg = pgNew;
     this.pgMask = pgMaskNew;
-    this.min = {x: minx, y:miny};
-    this.max = {x: maxx, y:maxy};
+    this.min = {x: minx, y: miny};
+    this.max = {x: maxx, y: maxy};
+
+    this.updateFinal();
   }
 
   intersects(selector) {
@@ -55,21 +58,45 @@ class Canvas {
 
   draw() {
     if (!this.pg) return;
-    this.pgFinal = this.pg.get();
-    this.pgFinal.mask(this.pgMask.get());
     push();
-    translate(this.min.x, this.min.y);
+    translate(this.min.x, this.min.y);    
+    noStroke();
+    fill(255);
     image(this.pgFinal, 0, 0);
+    for (var i=0; i<this.pgEraser.length; i++) {
+      var e = this.pgEraser[i];
+      ellipse(e[0], e[1], e[2]);
+    }
     pop();
   }
 
-  drawMask(mx, my) {
+  updateMask(mx, my) {
     if (!this.pgMask) return;
+    if (mx >= this.min.x-eraserSize/2 && mx < this.max.x+eraserSize/2 &&
+        my >= this.min.y-eraserSize/2 && my < this.max.y+eraserSize/2) {
+      this.pgEraser.push([mx-this.min.x, my-this.min.y, eraserSize]);
+    }
+  }
+
+  updateFinal() {
     this.pgMask.erase();
     this.pgMask.fill(255);
     this.pgMask.noStroke();
-    this.pgMask.ellipse(mx-this.min.x, my-this.min.y, eraserSize, eraserSize);
+    for (var i=0; i<this.pgEraser.length; i++) {
+      var e = this.pgEraser[i];
+      this.pgMask.ellipse(e[0], e[1], e[2], e[2]);
+    }
     this.pgMask.noErase();
+    this.pgFinal = this.pg.get();
+    this.pgFinal.mask(this.pgMask.get());
+    this.pgEraser = [];
+  }
+
+  mouseReleased(mouse) {
+    if (this.pgEraser.length == 0) {
+      return;
+    }
+    this.updateFinal();
   }
 
   getImageSelection(selector) {

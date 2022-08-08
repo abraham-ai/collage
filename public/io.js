@@ -12,6 +12,11 @@ function receive_creation(data) {
   let patch = patchesLookup[data.patch_idx];
   patch.status = data.status;
 
+  if (!patch.prompt) {
+    console.log("inpaint update");
+    console.log(data.status)
+  }
+
   if (data.status.status == 'failed') {
     patch.buttonsAlwaysVisible = true;
     patch.setupButtons(false, false, true);

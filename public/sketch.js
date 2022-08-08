@@ -1,32 +1,41 @@
+// x optimization
+// x resizing canvas bug
+// x optimize background
+// x disable scroll
+// draw border limit
+// inpainting bug
 // resizing patches
+// eraser draw in a line (edge strokes?)
+// ------
 // tutorial video
 // undo/redo
-// optimization
 
 
 const CREATION_AREA_MAXIMUM = 720000;
+const BG_RECT_SIZE = 32;
 
-var canvas = null;
-var patches = [];
-var menu = [];
-var selector = null;
+let canvas = null;
+let patches = [];
+let menu = [];
+let selector = null;
+let pgBg;
 
-var mouseRaw = {x: 0, y: 0};
-var mouse = {x: 0, y: 0};
-var anchor = {x: 0, y: 0};
-var trans = {x: 0, y: 0};
-var t1 = {x: 0, y: 0};
-var t2 = {x: 0, y: 0};
-var zoomLevel = 100;
-var zoom = 1;
+let mouseRaw = {x: 0, y: 0};
+let mouse = {x: 0, y: 0};
+let anchor = {x: 0, y: 0};
+let trans = {x: 0, y: 0};
+let t1 = {x: 0, y: 0};
+let t2 = {x: 0, y: 0};
+let zoomLevel = 100;
+let zoom = 1;
 
-var overlay = false;
-var shift = false;
-var cmd = false;
+let overlay = false;
+let shift = false;
+let cmd = false;
 
-var imgIcon;
-var isFileDragging = false;
-var eraserSize = 64;
+let imgIcon;
+let isFileDragging = false;
+let eraserSize = 64;
 
 
 function preload() {
@@ -37,11 +46,12 @@ function setup() {
   let cp5 = createCanvas(windowWidth, windowHeight);
   cp5.drop(fileDropped);
   cp5.dragOver(fileDragging);
-  
+
   canvas = new Canvas();
   selector = null;
   
   setZoomLevel(zoomLevel);
+  setupBackground();
   setupSocket();
   setupMenu();
 }
@@ -68,31 +78,40 @@ function help() {
   showHelp();
 }
 
-function drawBackground() {
-  var margin = 24;
+function setupBackground() {
+  var numCols = Math.ceil(width/BG_RECT_SIZE);
+  var numRows = Math.ceil(height/BG_RECT_SIZE);
+  numCols += (numCols % 2);
+  numRows += (numRows % 2);
+  pgBg = createGraphics(numCols * BG_RECT_SIZE, numRows * BG_RECT_SIZE);
+  pgBg.background(255);
+  pgBg.noStroke();
+  for (var j=0; j<numRows; j++) {
+    for (var i=0; i<numCols; i++) {
+      var x = i * BG_RECT_SIZE;
+      var y = j * BG_RECT_SIZE;
+      filled = (j+i)%2==0;
+      pgBg.fill(filled ? 155 : 225, 100);
+      pgBg.rect(x, y, BG_RECT_SIZE, BG_RECT_SIZE)
+    }
+  }
+}
 
-  var x1 = -trans.x/zoom;
-  var y1 = -trans.y/zoom;
+function drawBackground() {
+  let w = pgBg.width;
+  let h = pgBg.height;
+  let y1 = Math.floor(-trans.y / (h * zoom));
+  let x1 = Math.floor(-trans.x / (w * zoom));
   var x2 = (width-trans.x)/zoom;
   var y2 = (height-trans.y)/zoom;
-
-  var left = Math.ceil(x1 / margin)-1;
-  var top = Math.ceil(y1 / margin)-1;
-  var right = Math.ceil(x2 / margin)+1;
-  var bottom = Math.ceil(y2 / margin)+1;
-
-  var filledy = (left+(top%2))%2 == 0;
-  for (var j=top; j<bottom; j++) {
-    filledy = !filledy;
-    let filled = filledy;
-    for (var i=left; i<right; i++) {
-      var x = i * margin;
-      var y = j * margin;
-      noStroke();
-      fill(filled ? 155 : 225, 100);
-      rect(x, y, margin, margin)
-      filled = !filled;
+  let y = y1 * pgBg.height;
+  while (y < y2) {
+    let x = x1 * pgBg.width;
+    while (x < x2) {
+      image(pgBg, x, y);
+      x += w;
     }
+    y += h;
   }
 }
 
@@ -125,6 +144,13 @@ function draw() {
   for (var b=0; b<menu.length; b++) {
     menu[b].draw();
   }
+
+  // fps
+  push();
+  fill(0);
+  textSize(20);
+  text(Math.floor(frameRate()), width-30, 20);
+  pop();
 
   if (keyIsDown(91)) {
     drawEraserTool(mouse);
@@ -230,7 +256,7 @@ function mouseDragged() {
     trans.y = anchor.y + (t2.y - t1.y);
   }
   else if (keyIsDown(91)) {
-    canvas.drawMask(mouse.x, mouse.y);
+    canvas.updateMask(mouse.x, mouse.y);
   }
   else {
     for (var p=0; p<patches.length; p++) {
@@ -261,6 +287,7 @@ function mouseReleased() {
     patches[p].mouseReleased(mouse);
   }
 
+  canvas.mouseReleased(mouse);
 }
 
 function keyPressed() {

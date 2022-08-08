@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
       "text_input": data.text_input,
       "C": 4, 
       "f": 8, 
-      "ddim_steps": 250, 
+      "ddim_steps": 166, 
       "width": data.window_size.w,
       "height": data.window_size.h
     }    

@@ -1,16 +1,3 @@
-// x optimization
-// x resizing canvas bug
-// x optimize background
-// x disable scroll
-// draw border limit
-// inpainting bug
-// resizing patches
-// eraser draw in a line (edge strokes?)
-// ------
-// tutorial video
-// undo/redo
-
-
 const CREATION_AREA_MAXIMUM = 720000;
 const BG_RECT_SIZE = 32;
 
@@ -18,6 +5,7 @@ let canvas = null;
 let patches = [];
 let menu = [];
 let selector = null;
+let lasso = null;
 let pgBg;
 
 let mouseRaw = {x: 0, y: 0};
@@ -49,6 +37,7 @@ function setup() {
 
   canvas = new Canvas();
   selector = null;
+  lasso = null;
   
   setZoomLevel(zoomLevel);
   setupBackground();
@@ -134,6 +123,10 @@ function draw() {
     selector.draw();
   }
 
+  if (lasso) {
+    lasso.draw();
+  }
+  
   if (isFileDragging){
     imageMode(CENTER);
     image(imgIcon, mouse.x, mouse.y);
@@ -183,11 +176,11 @@ function updateMouse() {
 }
 
 function updateCursor() {
-  setCursor("auto");
+  setCursorCSS("auto");
   if (keyIsDown(91)) {
-    setCursor("eraser");
+    setCursorCSS("eraser");
   } else if (keyIsDown(SHIFT)) {
-    setCursor("all-scroll");
+    setCursorCSS("all-scroll");
   }
 }
 
@@ -199,7 +192,11 @@ function mouseMoved() {
   }
 
   for (var p=0; p<patches.length; p++) {
-    patches[p].mouseMoved(mouse);
+    patches[patches.length-p-1].mouseMoved(mouse);
+  }
+
+  if (lasso) {
+    lasso.mouseMoved(mouse);
   }
 
   if (selector) {
@@ -233,15 +230,30 @@ function mousePressed() {
   }
   
   for (var p=0; p<patches.length; p++) {
-    if (patches[p].mousePressed(mouse)) {
+    if (patches[patches.length-p-1].mousePressed(mouse)) {
       return;
     }
   }
-  
-  if (!selector) {
-    selector = new Selection(true, true, false, null);
+
+  if (lasso) {
+    lasso.mousePressed(mouse);
+  } 
+  else if (keyIsDown(OPTION)) {
+    if (!lasso) {
+      lasso = new Lasso();
+      selector = null;
+    }
+    lasso.mousePressed(mouse);
+  } 
+  else {
+    if (!selector) {
+      selector = new Selection(true, true, false, null);
+      selector.buttonsAlwaysVisible = true;
+      lasso = null;
+    }
+    selector.mousePressed(mouse);
   }
-  selector.mousePressed(mouse);
+
 }
 
 function mouseDragged() {
@@ -255,12 +267,19 @@ function mouseDragged() {
     trans.x = anchor.x + (t2.x - t1.x);
     trans.y = anchor.y + (t2.y - t1.y);
   }
+  else if (keyIsDown(OPTION)) {
+    if (lasso) {
+      if (lasso.mouseDragged(mouse)) {
+        return;
+      }
+    }
+  }
   else if (keyIsDown(91)) {
     canvas.updateMask(mouse.x, mouse.y);
   }
   else {
     for (var p=0; p<patches.length; p++) {
-      if (patches[p].mouseDragged(mouse)) {
+      if (patches[patches.length-p-1].mouseDragged(mouse)) {
         return;
       }
     }
@@ -275,6 +294,10 @@ function mouseReleased() {
   
   updateMouse();
 
+  if (lasso) {
+    lasso.mouseReleased(mouse);
+  }
+
   if (selector) {
     selector.mouseReleased(mouse);
   }
@@ -284,7 +307,7 @@ function mouseReleased() {
   }
 
   for (var p=0; p<patches.length; p++) {
-    patches[p].mouseReleased(mouse);
+    patches[patches.length-p-1].mouseReleased(mouse);
   }
 
   canvas.mouseReleased(mouse);
@@ -311,11 +334,11 @@ function keyReleased() {
 function mouseWheel(event) {
   if (event.deltaY > 0) {
     setZoomLevel(zoomLevel-1);
-    setCursor("zoom-in");
+    setCursorCSS("zoom-in");
   } 
   else if (event.deltaY < 0) {
     setZoomLevel(zoomLevel+1);
-    setCursor("zoom-out")
+    setCursorCSS("zoom-out")
   }
 }
 

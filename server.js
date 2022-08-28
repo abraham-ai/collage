@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
       "mode": "inpaint",
       "input_image": data.image,
       "mask_image": data.mask,
-      "ddim_steps": 250,
+      "ddim_steps": 100,
       "width": data.window_size.w,
       "height": data.window_size.h
     }    
@@ -72,7 +72,7 @@ io.on('connection', (socket) => {
       "text_input": data.text_input,
       "C": 4, 
       "f": 8, 
-      "ddim_steps": 166, 
+      "ddim_steps": 50, 
       "width": data.window_size.w,
       "height": data.window_size.h
     }    

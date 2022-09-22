@@ -54,10 +54,15 @@ io.on('connection', (socket) => {
 
   socket.on('inpaint', async (data) => {
     const creation_config = {
-      "mode": "inpaint",
-      "input_image": data.image,
-      "mask_image": data.mask,
-      "ddim_steps": 100,
+      "mode": "generate",
+      "init_image_b64": data.image,
+      "mask_image_b64": data.mask,
+      "strength": 0.2,
+      "text_input": data.text_input,
+      "sampler": "klms",
+      "seed": Math.floor(1e8 * Math.random()),
+      "steps": 50, 
+      "scale": 7.5,
       "width": data.window_size.w,
       "height": data.window_size.h
     }    
@@ -69,10 +74,14 @@ io.on('connection', (socket) => {
   socket.on('create', async (data) => {
     const creation_config = {
       "mode": "generate",
+      "init_image_b64": data.image,
+      "mask_image_b64": data.mask,
       "text_input": data.text_input,
-      "C": 4, 
-      "f": 8, 
-      "ddim_steps": 50, 
+      "sampler": "klms",
+      "seed": Math.floor(1e8 * Math.random()),
+      "steps": 50, 
+      "scale": 7.5,
+      "strength": 0,
       "width": data.window_size.w,
       "height": data.window_size.h
     }    

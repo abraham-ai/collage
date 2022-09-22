@@ -43,7 +43,11 @@ function submitPrompt() {
   if (prompt.value == '' || !selector) {
     return;
   }
-  
+
+  if (!selector) {
+    return;
+  }
+
   let newPatch = new Patch(null, true, false, false);  
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   newPatch.setupButtons(true, false, true);
@@ -52,12 +56,26 @@ function submitPrompt() {
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
   
-  socket.emit('create', {
+
+  let settings = {
     text_input: prompt.value,
     patch_idx: patchesLookupIdx,
     window_size: selector.window_size,
     auto_stamp: false
-  });
+  }
+  
+  if (canvas.pg) {
+    let img_crop = canvas.getImageSelection(selector);
+    let img_mask = canvas.getMaskSelection(selector);
+
+    img_crop.resize(selector.window_size.w, selector.window_size.h);
+    img_mask.resize(selector.window_size.w, selector.window_size.h);
+
+    settings.image = img_crop.canvas.toDataURL("image/png");
+    settings.mask = img_mask.canvas.toDataURL("image/png");
+  }
+
+  socket.emit('create', settings);
   patchesLookupIdx++;
   prompt.value = '';
   selector = null;
@@ -73,20 +91,23 @@ function submitInpaint() {
   img_crop.resize(selector.window_size.w, selector.window_size.h);
   img_mask.resize(selector.window_size.w, selector.window_size.h);
   
+  let prompt = "A spaceship in a colorful galaxy"
+
   let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   newPatch.setButtonsVisible(false);
   newPatch.borderWidth = 0;
-  newPatch.prompt = null;
+  newPatch.prompt = prompt;
   patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
 
   socket.emit('inpaint', {
     image: img_crop.canvas.toDataURL("image/png"),
     mask: img_mask.canvas.toDataURL("image/png"),
+    text_input: prompt,
     patch_idx: patchesLookupIdx,
     window_size: selector.window_size,
-    auto_stamp: true
+    auto_stamp: false
   });
   patchesLookupIdx++;
   selector = null;

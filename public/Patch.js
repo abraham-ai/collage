@@ -63,8 +63,10 @@ class Patch extends MoveableObjectWithButtons {
   }
 
   delete() {
-    this.img.resize(0, 0);
-    this.img = null;
+    if (this.img) {
+      this.img.resize(0, 0);
+      this.img = null;
+    }
     var idx = patches.indexOf(this);
     patches.splice(idx, 1);
   }

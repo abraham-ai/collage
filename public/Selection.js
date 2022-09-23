@@ -10,17 +10,17 @@ class Selection extends MoveableObjectWithButtons {
     this.buttonsVerticalAlign = "middle";
     
     this.bCreate = new Button(this, "Create", showCreationTool);
-    this.bInpaint = new Button(this, "Inpaint", submitInpaint);
+    // this.bInpaint = new Button(this, "Inpaint", submitInpaint);
     this.bCopy = new Button(this, "Copy", copySelection);
     this.bErase = new Button(this, "Erase", eraseSelection);
     
     this.bCreate.setVisible(false);
-    this.bInpaint.setVisible(false);
+    // this.bInpaint.setVisible(false);
     this.bCopy.setVisible(false);
     this.bErase.setVisible(false);
     
     this.buttons.push(this.bCreate);
-    this.buttons.push(this.bInpaint);
+    // this.buttons.push(this.bInpaint);
     this.buttons.push(this.bCopy);
     this.buttons.push(this.bErase);
   }

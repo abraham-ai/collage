@@ -30,7 +30,7 @@ function preload() {
   imgIcon = loadImage("imageicon.png");  
 }
 
-function setup() {
+async function setup() {
   let cp5 = createCanvas(windowWidth, windowHeight);
   cp5.drop(fileDropped);
   cp5.dragOver(fileDragging);
@@ -41,7 +41,7 @@ function setup() {
   
   setZoomLevel(zoomLevel);
   setupBackground();
-  setupSocket();
+  await setupSocket();
   setupMenu();
 }
 

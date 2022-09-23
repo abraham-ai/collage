@@ -1,13 +1,16 @@
 const PORT = process.env.PORT || 3000;
+
 const express = require('express');
-const app = express();
 const http = require('http');
+const url = require('url');
 const axios = require('axios');
+const {createProxyMiddleware} = require('http-proxy-middleware');
+
+const app = express();
 const server = http.createServer(app);
 const io = require("socket.io")(server);
-const config = require('./config.json');
-const generator_url = config.generator_url;
 
+const REPLICATE_API_TOKEN = "a786096537b27e58d11e6ec899de775eb0877690";
 
 app.use(express.static('public'));
 
@@ -15,83 +18,36 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', (socket) => {
-  console.log('Client connected');
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
-
-  async function run_generator_update(task_id, patch_idx, auto_stamp) {
-    let results = await axios.post(`${generator_url}/fetch`, {token: task_id});
-    let status = results.data.status;
-    let output = {patch_idx: patch_idx, status: status, auto_stamp: auto_stamp}
-    let intermediateCreation = null;
-    if (status.status == 'complete') {
-      let creation = results.data.output.creation;
-      output.creation = creation.data;
-    }
-    else if (status.status == 'running') {
-      if (results.data.output.intermediate_creation) {
-        let newCreation = results.data.output.intermediate_creation.data;
-        if (newCreation != intermediateCreation) {
-          intermediateCreation = newCreation;
-          output.creation = intermediateCreation;
-        }
-      }
-    }
-    socket.emit('creation', output);
-    if (status.status == 'running' ||
-      status.status == 'queued' ||
-      status.status == 'pending' ||
-      status.status == 'starting' ||
-      status.status == 'invalid token') {
-      setTimeout(function(){
-        run_generator_update(task_id, patch_idx, auto_stamp);
-      }, 1000);
-    }
+app.get('/dl', async (req, res) => {
+  const replicateUrl = url.parse(req.url, true).query.url;
+  if (!replicateUrl.startsWith('https://replicate.com/api/models/abraham-ai/eden-stable-diffusion/files/')) {
+    res.status(400).send("Wrong URL");
   }
-
-  socket.on('inpaint', async (data) => {
-    const creation_config = {
-      "mode": "generate",
-      "init_image_b64": data.image,
-      "mask_image_b64": data.mask,
-      "strength": 0.2,
-      "text_input": data.text_input,
-      "sampler": "klms",
-      "seed": Math.floor(1e8 * Math.random()),
-      "steps": 50, 
-      "scale": 7.5,
-      "width": data.window_size.w,
-      "height": data.window_size.h
-    }    
-    let results = await axios.post(`${generator_url}/run`, creation_config);
-    const task_id = results.data.token;
-    run_generator_update(task_id, data.patch_idx, data.auto_stamp);
+  const obj = await axios.get(replicateUrl, {  
+    headers: {
+      'Authorization': "Token "+REPLICATE_API_TOKEN,
+      'Content-Type': "application/json",
+      'Accept': "application/json",      
+    },
+    responseType: 'arraybuffer',
   });
-
-  socket.on('create', async (data) => {
-    const creation_config = {
-      "mode": "generate",
-      "init_image_b64": data.image,
-      "mask_image_b64": data.mask,
-      "text_input": data.text_input,
-      "sampler": "klms",
-      "seed": Math.floor(1e8 * Math.random()),
-      "steps": 50, 
-      "scale": 7.5,
-      "strength": 0,
-      "width": data.window_size.w,
-      "height": data.window_size.h
-    }    
-    let results = await axios.post(`${generator_url}/run`, creation_config);
-    const task_id = results.data.token;
-    run_generator_update(task_id, data.patch_idx, data.auto_stamp);
-  });
-
+  const base64image = Buffer.from(obj.data, 'binary').toString('base64');
+  res.send({result: base64image});
 });
 
+app.use('/api/', createProxyMiddleware({
+  router: (req) => req.originalUrl.replace(/.*https?:\/\//, 'https://'),
+  changeOrigin: true,
+  pathRewrite: { '.*': '' },
+  onProxyReq: (proxyReq) => {
+    proxyReq.setHeader('Authorization', `Token ${REPLICATE_API_TOKEN}`);
+  },
+  onProxyRes: (proxyRes) => {
+    proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+    proxyRes.headers['Access-Control-Allow-Headers'] = '*';
+    delete proxyRes.headers['content-type'];
+  }
+}));
 
 server.listen(3000, () => {
   console.log('listening on port 3000');

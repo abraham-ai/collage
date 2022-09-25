@@ -8,11 +8,19 @@ const replicate = new Replicate({
 const model = await replicate.models.get("abraham-ai/eden-stable-diffusion");
 
 export async function submitRequest(config) {
-  console.log("lets go")
   const prediction = await model.predict(config);
-  console.log("lets go 2")
-  console.log(prediction)
   return prediction;
+}
+
+export async function base64EncodeImageFromUrl(imageUrl) {
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function downloadResult(resultUrl) {

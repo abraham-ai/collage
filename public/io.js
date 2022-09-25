@@ -66,7 +66,7 @@ async function submitPrompt() {
   //patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
   
-  
+
   // let settings = {
   //   text_input: prompt.value,
   //   patch_idx: patchesLookupIdx,
@@ -105,7 +105,9 @@ async function submitPrompt() {
   prompt.value = '';
   selector = null;
 
+  
   let prediction = await replicate.submitRequest(config);
+
   if (!prediction || prediction.status=="failed") {
     newPatch.status = "failed";
     newPatch.buttonsAlwaysVisible = true;

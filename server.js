@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = require("socket.io")(server);
 
-const REPLICATE_API_TOKEN = "a786096537b27e58d11e6ec899de775eb0877690";
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN
 
 app.use(express.static('public'));
 

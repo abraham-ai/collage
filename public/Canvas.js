@@ -99,6 +99,47 @@ class Canvas {
     this.updateFinal();
   }
 
+  getImageSelection2(selector) {
+    
+    let x1 = selector.x - this.min.x;
+    let y1 = selector.y - this.min.y;
+    let x2 = selector.x + selector.w - this.min.x;
+    let y2 = selector.y + selector.h - this.min.y;
+
+    let ix1 = constrain(x1, 0, this.max.x - this.min.x);
+    let iy1 = constrain(y1, 0, this.max.y - this.min.y);
+    let ix2 = constrain(x2, 0, this.max.x - this.min.x);
+    let iy2 = constrain(y2, 0, this.max.y - this.min.y);
+
+    let iw = ix2 - ix1;
+    let ih = iy2 - iy1;
+
+    let img_crop = this.pg.get(ix1, iy1, iw, ih);
+    let pgImageSelection = createGraphics(selector.w, selector.h);
+    
+
+    for (let c = -5; c < 5; c++) {
+      for (let r = -5; r < 5; r++) {
+    // for (let c = 0; c < 1; c++) {
+    //    for (let r = 0; r < 1; r++) {
+      
+        let tx = c * iw;
+        let ty = -y1 + r * ih;
+        let sx = (c + 6) % 2;
+        let sy = (r + 6) % 2;
+        pgImageSelection.push();
+        pgImageSelection.translate(tx, ty);
+        pgImageSelection.scale((-1)**sx, (-1)**sy);
+        pgImageSelection.image(img_crop, -sx * iw, -sy * ih);
+        pgImageSelection.pop();
+      }
+    }
+  
+    return pgImageSelection.get();
+  }
+
+
+
   getImageSelection(selector) {
     let img_crop = this.pg.get(
       selector.x - this.min.x, 
@@ -107,6 +148,7 @@ class Canvas {
     );
     return img_crop;
   }
+
 
   getMaskSelection(selector) {
     let x = selector.x - this.min.x;

@@ -13,7 +13,9 @@ let replicate;
 
 async function setupSocket() {
   socket = io.connect();
+  console.log("load rep")
   replicate = await import('./replicate.js');
+  console.log("loaded rep")
   //socket.on('creation', receive_creation);
 }
 
@@ -78,7 +80,9 @@ async function submitPrompt() {
   let config = {
     "text_input": prompt.value,
     "mode": "generate",
-    "steps": 25,
+    "sampler": "euler_ancestral",
+    "init_image_strength": 0.0,
+    "steps": 50,
     "width": selector.window_size.w,
     "height": selector.window_size.h
   }
@@ -99,7 +103,10 @@ async function submitPrompt() {
     
     config.init_image_b64 = img_crop.canvas.toDataURL("image/png");
     config.mask_image_b64 = img_mask.canvas.toDataURL("image/png");
+
+
     config.init_image_strength = 0.0;
+    config.mask_invert = true;
   }
 
   prompt.value = '';
@@ -117,6 +124,7 @@ async function submitPrompt() {
   }
 
   newPatch.status = prediction.status;
+  console.log("get ", prediction)
 
   let data = await replicate.downloadResult(prediction);
 

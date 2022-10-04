@@ -1,3 +1,17 @@
+// x optimization
+// x resizing canvas bug
+// x optimize background
+// x disable scroll
+// x catchup new features
+// draw border limit
+// inpainting bug
+// resizing patches
+// eraser draw in a line (edge strokes?)
+// ------
+// tutorial video
+// undo/redo
+
+
 const CREATION_AREA_MAXIMUM = 720000;
 const BG_RECT_SIZE = 32;
 
@@ -18,7 +32,7 @@ let zoomLevel = 100;
 let zoom = 1;
 
 let overlay = false;
-let shift = false;
+let spacebar = false;
 let cmd = false;
 
 let imgIcon;
@@ -126,7 +140,7 @@ function draw() {
   if (lasso) {
     lasso.draw();
   }
-  
+
   if (isFileDragging){
     imageMode(CENTER);
     image(imgIcon, mouse.x, mouse.y);
@@ -145,7 +159,7 @@ function draw() {
   text(Math.floor(frameRate()), width-30, 20);
   pop();
 
-  if (keyIsDown(91)) {
+  if (keyIsDown(SHIFT)) {
     drawEraserTool(mouse);
   }
 }
@@ -177,9 +191,9 @@ function updateMouse() {
 
 function updateCursor() {
   setCursorCSS("auto");
-  if (keyIsDown(91)) {
+  if (keyIsDown(SHIFT)) {
     setCursorCSS("eraser");
-  } else if (keyIsDown(SHIFT)) {
+  } else if (keyIsDown(32)) {
     setCursorCSS("all-scroll");
   }
 }
@@ -209,7 +223,7 @@ function mousePressed() {
   
   updateMouse();
 
-  if (keyIsDown(SHIFT)) {
+  if (keyIsDown(32)) {
     anchor.x = trans.x;
     anchor.y = trans.y;
     t1.x = mouseRaw.x;
@@ -261,7 +275,7 @@ function mouseDragged() {
 
   updateMouse();
 
-  if (keyIsDown(SHIFT)) {
+  if (keyIsDown(32)) {
     t2.x = mouseRaw.x;
     t2.y = mouseRaw.y;
     trans.x = anchor.x + (t2.x - t1.x);
@@ -274,7 +288,7 @@ function mouseDragged() {
       }
     }
   }
-  else if (keyIsDown(91)) {
+  else if (keyIsDown(SHIFT)) {
     canvas.updateMask(mouse.x, mouse.y);
   }
   else {

@@ -57,12 +57,16 @@ class Patch extends MoveableObjectWithButtons {
         this.status.status == 'queued' ||
         this.status.status == 'invalid token' ||
         this.status.status == 'running')) {
-          setCursor("wait");
+          setCursorCSS("wait");
       }
     }
   }
 
   delete() {
+    if (this.img) {
+      this.img.resize(0, 0);
+      this.img = null;
+    }
     var idx = patches.indexOf(this);
     patches.splice(idx, 1);
   }
@@ -142,5 +146,14 @@ class Patch extends MoveableObjectWithButtons {
     }
     this.drawButtons();
     pop();
+  }
+
+  mouseReleased(mouse) {
+    if (this.resizing) {
+      if (this.w > this.img.width || this.h > this.img.height) {
+        this.img.resize(this.w, this.h);
+      }
+    }
+    super.mouseReleased(mouse);
   }
 }

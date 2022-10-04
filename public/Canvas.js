@@ -7,7 +7,7 @@ class Canvas {
     this.pgMask = null;
     this.pgEraser = [];
   }
-      
+  
   stamp(patch) {
     let minx = Math.round(min(this.min.x, patch.x));
     let miny = Math.round(min(this.min.y, patch.y));
@@ -149,8 +149,9 @@ class Canvas {
     this.pgMask.erase();
     this.pgMask.fill(255);
     this.pgMask.noStroke();
-    this.pgMask.rect(selector.x - this.min.x, selector.y - this.min.y, selector.w, selector.h);
+    selector.drawMask(this);
     this.pgMask.noErase();
+    this.updateFinal();
   }
 
   save(filename) {
@@ -161,5 +162,3 @@ class Canvas {
   }
 
 }
-  
-  

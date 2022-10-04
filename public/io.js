@@ -1,47 +1,71 @@
-var socket;
+// TODO
+// get in-progress images
+// only crop/mask when needed
+// in-progress images
+// sign-in
+// ------
+// x eden backend + webhook
+// x preprocess/inpaint cropped image
+// feather mask
 
+
+var socket;
+var taskIds = [];
 var patchesLookup = {};
-var patchesLookupIdx = 0;
+var authToken = null;
+
+const GATEWAY_URL = "https://app.dev.aws.abraham.fun"
+const MINIO_URL = "https://minio.aws.abraham.fun"
+const MINIO_BUCKET = "creations-stg"
+
 
 function setupSocket() {
-  socket = io.connect();
-  socket.on('creation', receive_creation);
+
+  // this is just a test example
+  let postData = {"userId":"0x9974fD79DDF058E99a018ebd1Fce89CE23f4B874", "userType": "ethereum", "signature":"0xc316c04db61d853e3e1a22e658dbe254b70caeeaeeee115eb472c2d74455ce1c51452042dd1deceae0633843cd7026c704b5fe282b7722e5f93cb046a6ccb28d1c", "message": "this is my messag3e1"};
+
+  httpPost(`${GATEWAY_URL}/sign_in`, 'json', postData, function(result) {
+    authToken = result.authToken;
+    setInterval(runUpdate, 1000);
+  });  
+  //socket = io.connect();
+  //socket.on('creation', receive_creation);
 }
 
-function receive_creation(data) {
-  let patch = patchesLookup[data.patch_idx];
-  patch.status = data.status;
-
-  if (!patch.prompt) {
-    console.log("inpaint update");
-    console.log(data.status)
-  }
-
-  if (data.status.status == 'failed') {
-    patch.buttonsAlwaysVisible = true;
-    patch.setupButtons(false, false, true);
-    patch.positionButtons();
-  }
-
-  if (!data.creation) {
+function runUpdate() {
+  
+  if (taskIds.length == 0) {
     return;
   }
 
-  var pimg = new Image();
-  pimg.src = 'data:image/jpeg;base64,'+data.creation;
-  pimg.onload = function() {
-    var img = createImage(pimg.width, pimg.height);
-    img.drawingContext.drawImage(pimg, 0, 0);
-    img.resize(patch.w, patch.h)
-    patch.img = img;
-    canvas.stamp(patch);
-  }
+  httpPost(`${GATEWAY_URL}/fetch`, 'json', {"taskIds": taskIds}, 
+    function(result) {
+      for (let i = 0; i < result.length; i++) {
+        let task = result[i];
+        if (task.status == "failed") {
+          console.log("task failed", task);
+        }
+        else if (task.status == "complete") {
+          let sha = task.output;
+          let taskId = task.generator.task_id;
+          let imgUrl = `${MINIO_URL}/${MINIO_BUCKET}/${sha}`;
+          let patch = patchesLookup[taskId];
+          // patch.status = task.status;
+          loadImage(imgUrl, function(img) {
+            img.resize(patch.w, patch.h)
+            patch.img = img;
+            canvas.stamp(patch);
+            patches.splice(patches.indexOf(patch), 1);
+            taskIds.splice(taskIds.indexOf(taskId), 1);
+          });
+        }
+      }
+    }, 
+    function(error) {
+      console.log("there is an error", error.message);
+    }
+  );
 
-  if (data.status.status == 'complete' && data.auto_stamp) {
-    canvas.stamp(patch);
-    var idx = patches.indexOf(patch);
-    patches.splice(idx, 1);
-  }
 }
 
 function submitPrompt() {
@@ -49,77 +73,92 @@ function submitPrompt() {
   if (prompt.value == '' || !selector) {
     return;
   }
-  //var newPatch = new Patch(null, true, false, false);
-  
-  
-  let newPatch = new Patch(null, false, false, false);
-  newPatch.set(selector.x, selector.y, selector.w, selector.h);
-  newPatch.setButtonsVisible(false);
-  newPatch.borderWidth = 0;
-  newPatch.prompt = prompt.value;
-  patchesLookup[patchesLookupIdx] = newPatch;
-  patches.push(newPatch);
-  
-  
-  socket.emit('create', {
-    text_input: prompt.value,
-    patch_idx: patchesLookupIdx,
-    window_size: selector.window_size,
-    auto_stamp: true
-  });
-  patchesLookupIdx++;
-  prompt.value = '';
-  selector = null;
-}
 
-function submitInpaint() {
-  if (!selector) {
-    return;
+  let config = {
+    "mode": "generate", 
+    "text_input": prompt.value,
+    "sampler": "euler_ancestral",
+    "scale": 8.0,
+    "steps": 50, 
+    "W": selector.window_size.w,
+    "H": selector.window_size.h,
+    "mask_invert": true
   }
-  let img_crop = canvas.getImageSelection(selector);
-  let img_mask = canvas.getMaskSelection(selector);
 
-  img_crop.resize(selector.window_size.w, selector.window_size.h);
-  img_mask.resize(selector.window_size.w, selector.window_size.h);
-  
-  
+  if (canvas.pg) {
+    let img_crop = canvas.getImageSelection(selector);
+    let img_mask = canvas.getMaskSelection(selector);
+    img_crop.resize(selector.window_size.w, selector.window_size.h);
+    img_mask.resize(selector.window_size.w, selector.window_size.h);
+    img_crop.save('CROP.png')
+    img_mask.save('MASK.png')
+    config.init_image_b64 = img_crop.canvas.toDataURL("image/png");
+    config.mask_image_b64 = img_mask.canvas.toDataURL("image/png");
+    config.init_image_strength = 0.0;
+    config.init_image_inpaint_mode = "cv2_telea";
+    config.mask_invert = true;
+  }
+
+  const postData = {
+    "token": authToken,
+    "application": "collage", 
+    "generator_name": "stable-diffusion", 
+    "config": config
+  }
+    
   let newPatch = new Patch(null, false, false, false);
   newPatch.set(selector.x, selector.y, selector.w, selector.h);
   newPatch.setButtonsVisible(false);
-  newPatch.borderWidth = 0;
-  newPatch.prompt = null;
-  patchesLookup[patchesLookupIdx] = newPatch;
-  patches.push(newPatch);
-
-
-  socket.emit('inpaint', {
-    image: img_crop.canvas.toDataURL("image/png"),
-    mask: img_mask.canvas.toDataURL("image/png"),
-    patch_idx: patchesLookupIdx,
-    window_size: selector.window_size,
-    auto_stamp: true
-  });
-  patchesLookupIdx++;
-  selector = null;
+  newPatch.prompt = prompt.value;
+  
+  httpPost(`${GATEWAY_URL}/request`, 'text', postData, 
+    function(result) {
+      const taskId = result;
+      patchesLookup[taskId] = newPatch;
+      patches.push(newPatch);
+      newPatch.status = {status: "pending", progress: 0};
+      taskIds.push(taskId);
+      prompt.value = '';
+      selector = null;
+    }, 
+    function(error) {
+      console.log(error);
+    }
+  );
 }
 
-function createCopy() {
+function copySelection() {
   if (!selector || !canvas.pg) {
     return;
   }
   
   let img_cropped_masked = canvas.getMaskedImageSelection(selector); 
-  
-  
+    
   let newPatch = new Patch(null, true, false, false);
   newPatch.set(selector.x+30, selector.y+30, selector.w, selector.h);
   newPatch.img = img_cropped_masked;
   newPatch.setupButtons(true, false, true);
   newPatch.positionButtons();
-  patchesLookup[patchesLookupIdx] = newPatch;
   patches.push(newPatch);
-  patchesLookupIdx++;  
   selector = null;
+}
+
+
+function copyLasso() {
+  if (!lasso || !canvas.pg) {
+    return;
+  }
+  let img_selection = canvas.getMaskedImageSelection(lasso); 
+  let lasso_mask = lasso.getMaskImage();
+  img_selection.mask(lasso_mask);
+
+  let newPatch = new Patch(null, true, false, false);
+  newPatch.set(lasso.x+30, lasso.y+30, lasso.w, lasso.h);
+  newPatch.img = img_selection;
+  newPatch.setupButtons(true, false, true);
+  newPatch.positionButtons();
+  patches.push(newPatch);
+  lasso = null;
 }
 
 function fileDropped(file) {
@@ -129,9 +168,7 @@ function fileDropped(file) {
     newPatch.set(mouse.x, mouse.y, img.width, img.height);
     newPatch.setupButtons(true, false, true);
     newPatch.positionButtons();
-    patchesLookup[patchesLookupIdx] = newPatch;
     patches.push(newPatch);
-    patchesLookupIdx++;  
   }).hide();
   isFileDragging = false;
 }
@@ -140,6 +177,12 @@ function fileDragging() {
   isFileDragging = true;
 }
 
-function eraseCanvasSelection() {
+function eraseSelection() {
   canvas.erase(selector);
+  selector = null;
+}
+
+function eraseLasso() {
+  canvas.erase(lasso);
+  lasso = null;
 }

@@ -1,6 +1,6 @@
-function setCursor(cursorType) {
+function setCursorCSS(cursorType) {
   if (cursorType == "eraser") {
-    document.body.style.cursor = "none";
+    //document.body.style.cursor = "none";
   } else {
     document.body.style.cursor = cursorType;
   }
@@ -25,12 +25,28 @@ class HighlightableObject {
     this.h = h;
   }
 
+  getX1() {
+    return this.parent.x + this.x;
+  }
+
+  getY1() {
+    return this.parent.y + this.y;
+  }
+
+  getX2() {
+    return this.parent.x + this.x + this.w;
+  }
+
+  getY2() {
+    return this.parent.y + this.y + this.h;
+  }
+
   inside(x, y) {
     return (
-      x >= this.parent.x + this.x && 
-      x <  this.parent.x + this.x + this.w &&
-      y >= this.parent.y + this.y && 
-      y <  this.parent.y + this.y + this.h
+      x >= this.getX1() && 
+      x <  this.getX2() &&
+      y >= this.getY1() && 
+      y <  this.getY2()
     ); 
   }
 
@@ -73,7 +89,7 @@ class Button extends HighlightableObject {
   mouseMoved(mouse) {
     super.mouseMoved(mouse);
     if (this.visible && this.enabled && this.mouseover) {
-      setCursor("pointer");
+      setCursorCSS("pointer");
       return true;
     }
     return false;
@@ -193,14 +209,24 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
 
     this.s1 = {x:0, y:0};
     this.s2 = {x:0, y:0};
-    this.anchor = {x:0, y:0};
+    this.anchor = {x:0, y:0, w:0, h:0};
     this.dragging = false;
+    this.resizing = false;
+
+    this.west = false;
+    this.east = false;
+    this.north = false;
+    this.south = false;
 
     this.borderColor = color(100);
     this.borderColorHighlighted = color(0, 250, 0);
     this.borderWidth = 5;
     this.buttonsAlwaysVisible = false;
     this.buttonsVerticalAlign = 'bottom';
+  }
+
+  getMouseOverResizing() {
+    return (this.north || this.south || this.west || this.east);
   }
 
   positionButtons() {
@@ -213,10 +239,11 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     }
     let availArea = 0.66 * (this.w * (this.h-30));
     let bArea = constrain(availArea / buttons.length, 300, 6000);
-    let bW = Math.sqrt(bArea * 4);
+    let bW = max(this.parent.w, Math.sqrt(bArea * 4));
     let bH = bW / 4;
-    if (availArea > (1.1 * bW * 1.2 * bH) * buttons.length) {
-      let cols = min(buttons.length, Math.floor((this.w-10) / (1.1 * bW)));
+    if (availArea > (1.1 * bW * 1.2 * bH) * buttons.length ||
+        this.buttonsAlwaysVisible) {
+      let cols = max(1, min(buttons.length, Math.floor((this.w-10) / (1.1 * bW))));
       let rows = Math.floor(buttons.length/cols);
       let lx = 5 + (this.w - (bW * cols * 1.1)) / 2;
       let ly = 40;
@@ -297,64 +324,78 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     pop();
   }
 
-  mouseMoved(mouse) {
-    let buttonHighlighted = super.mouseMoved(mouse);
-    if (!buttonHighlighted && this.mouseover) {
-      setCursor("grab");
-    }
-  }
-
-  mousePressed(mouse, callSuper=true) {   
-    if (callSuper) {
-      super.mousePressed(mouse);
-    }
-    if (this.pressed && this.moveable && !this.buttonPressed){
-      setCursor("grabbing");
-      this.anchor.x = this.x;
-      this.anchor.y = this.y;
-      this.s1.x = mouse.x;
-      this.s1.y = mouse.y;
-      if (this.mouseover) {
-        this.dragging = true;
-      } 
-      else if (this.resizeable) {
-        this.s2.x = this.s1.x;
-        this.s2.y = this.s1.y;
-      }
-    }
-    return this.pressed;
-  }
-
-  mouseDragged(mouse) {
-    if (!this.moveable) return false;
-    if (!this.pressed) return false;    
-    if (this.buttonPressed) return false;
-
-    this.s2.x = mouse.x;
-    this.s2.y = mouse.y;
-    
+  handleResize() {
+    let dy = this.s2.y - this.s1.y;
+    let dx = this.s2.x - this.s1.x;
     if (this.dragging) {
-      setCursor("grabbing");
-      this.set(
-        this.anchor.x + (this.s2.x - this.s1.x),
-        this.anchor.y + (this.s2.y - this.s1.y),
-        this.w,
-        this.h
-      )
+      if (this.resizing) {   
+        let aspect = this.w / this.h;          
+        let aspectLocked =
+          ((this.north || this.south) && !this.west && !this.east) ||
+          ((this.west || this.east) && !this.north && !this.south);
+        if (aspectLocked) {
+          let W = this.anchor.w;
+          let H = this.anchor.h;
+          let mx = 0;
+          let my = 0;
+          if (this.north) {
+            H = this.anchor.h - dy;
+            W = H * aspect;
+            mx = 0.5 * (W - this.anchor.w);
+            my = -dy;
+          } 
+          else if (this.south) {
+            H = this.anchor.h + dy;
+            W = H * aspect; 
+            mx = 0.5 * (W - this.anchor.w);
+            my = 0;
+          }
+          else if (this.east) {          
+            W = this.anchor.w + dx;
+            H = W / aspect;
+            mx = 0;
+            my = 0.5 * (H - this.anchor.h);
+          } 
+          else if (this.west) {          
+            W = this.anchor.w - dx;
+            H = W / aspect;
+            mx = -dx;
+            my = 0.5 * (H - this.anchor.h);
+          } 
+          this.set(this.anchor.x - mx, this.anchor.y - my, W, H);
+        }
+        else {
+          this.set(
+            this.anchor.x + (this.west ? dx : 0), 
+            this.anchor.y + (this.north ? dy : 0), 
+            this.anchor.w + (this.west ? -dx : dx), 
+            this.anchor.h + (this.north ? -dy : dy)
+          );
+        }
+        this.positionButtons();
+      } else {
+        setCursorCSS("grabbing");
+        this.set(
+          this.anchor.x + dx,
+          this.anchor.y + dy,
+          this.w,
+          this.h
+        )
+      }
       return true;
     } 
     else if (this.resizeable) {        
       if (this.s1.y <= this.s2.y) {
         if (this.s1.x <= this.s2.x) {
-          setCursor("se-resize");
+          setCursorCSS("se-resize");
         } else {
-          setCursor("sw-resize");
+          setCursorCSS("sw-resize");
         }
       } else {
         if (this.s1.x <= this.s2.x) {
-          setCursor("ne-resize");
+          setCursorCSS("ne-resize");
         } else {
-          setCursor("nw-resize");
+          setCursorCSS("nw-resize");
         }
       }
       let marginX = 0;
@@ -378,9 +419,80 @@ class MoveableObjectWithButtons extends ObjectWithButtons {
     return false;
   }
 
+  setCursor() {
+    if (!this.mouseover || this.resizing) {
+      return;
+    }
+    let margin = 50.0 / zoom;
+    this.west  = mouse.x < this.getX1() + margin && mouse.x > this.getX1();
+    this.east  = mouse.x > this.getX2() - margin && mouse.x < this.getX2();
+    this.north = mouse.y < this.getY1() + margin && mouse.y > this.getY1();
+    this.south = mouse.y > this.getY2() - margin && mouse.y < this.getY2();
+    this.updateCursorCSS();
+  }
+
+  updateCursorCSS() {
+    if (this.getMouseOverResizing()) {
+      let cursorStr = "";
+      if (this.north) cursorStr += "n"
+      if (this.south) cursorStr += "s"
+      if (this.west) cursorStr += "w"
+      if (this.east) cursorStr += "e"
+      setCursorCSS(cursorStr+"-resize");  
+    } else {      
+      setCursorCSS("grab")
+    }
+  }
+
+  mouseMoved(mouse) {
+    let buttonHighlighted = super.mouseMoved(mouse);
+    if (!buttonHighlighted && this.mouseover) {
+      this.setCursor();
+    }
+  }
+
+  mousePressed(mouse, callSuper=true) {   
+    if (callSuper) {
+      super.mousePressed(mouse);
+    }
+    if (this.pressed && this.moveable && !this.buttonPressed){
+      this.anchor.x = this.x;
+      this.anchor.y = this.y;
+      this.anchor.w = this.w;
+      this.anchor.h = this.h;
+      this.s1.x = mouse.x;
+      this.s1.y = mouse.y;
+      if (this.mouseover) {
+        this.dragging = true;
+      } 
+      else if (this.resizeable) {
+        this.s2.x = this.s1.x;
+        this.s2.y = this.s1.y;
+      }
+      this.resizing = this.getMouseOverResizing();
+      if (!this.resizing) {
+        this.updateCursorCSS();
+      }
+    }
+    return this.pressed;
+  }
+
+  mouseDragged(mouse) {
+    if (!this.moveable) return false;
+    if (!this.pressed) return false;    
+    if (this.buttonPressed) return false;
+    this.s2.x = mouse.x;
+    this.s2.y = mouse.y;
+    return this.handleResize();
+  }
+
   mouseReleased(mouse) {
     super.mouseReleased(mouse);
-    this.dragging = false;
+    if (this.dragging){
+      this.positionButtons();
+      this.dragging = false;
+    }
+    this.resizing = false;
   }
 
 }

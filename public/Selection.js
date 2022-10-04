@@ -1,4 +1,4 @@
-const SIZE_WARNING = "Warning: creating or inpainting this selection might fail because size is too large.";
+const SIZE_WARNING = "Warning: creating this selection might fail because size is too large.";
     
     
 class Selection extends MoveableObjectWithButtons {
@@ -9,36 +9,17 @@ class Selection extends MoveableObjectWithButtons {
     this.buttonsAlwaysVisible = true;
     this.buttonsVerticalAlign = "middle";
     
-    this.bCreate = new Button(this, "Create", this.create);
-    this.bInpaint = new Button(this, "Inpaint", this.inpaint);
-    this.bCopy = new Button(this, "Copy", this.copy);
-    this.bErase = new Button(this, "Erase", this.erase);
+    this.bCreate = new Button(this, "Create", showCreationTool);
+    this.bCopy = new Button(this, "Copy", copySelection);
+    this.bErase = new Button(this, "Erase", eraseSelection);
     
     this.bCreate.setVisible(false);
-    this.bInpaint.setVisible(false);
     this.bCopy.setVisible(false);
     this.bErase.setVisible(false);
     
     this.buttons.push(this.bCreate);
-    this.buttons.push(this.bInpaint);
     this.buttons.push(this.bCopy);
     this.buttons.push(this.bErase);
-  }
-
-  create() {
-    showCreationTool();
-  }
-
-  inpaint() {
-    submitInpaint();
-  }
-
-  copy() {
-    createCopy();
-  }
-
-  erase() {
-    eraseCanvasSelection();
   }
 
   set(x, y, w, h) {
@@ -77,10 +58,125 @@ class Selection extends MoveableObjectWithButtons {
     pop();
   }
 
+  drawMask(canvas) {
+    canvas.pgMask.rect(this.x - canvas.min.x, this.y - canvas.min.y, this.w, this.h);
+  }
+
   mousePressed(mouse) {
     super.checkIfButtonsPressed(mouse);
     this.pressed = true;
     super.mousePressed(mouse, false);
+  }
+
+}
+
+
+
+class Lasso extends MoveableObjectWithButtons {
+  
+  constructor() {
+    super(null, true, true, false);
+    this.points = [];
+    this.min = {x: 1e8, y: 1e8};
+    this.max = {x: -1e8, y: -1e8};
+    this.selecting = false;
+    
+    this.buttonsAlwaysVisible = true;
+    this.buttonsVerticalAlign = "middle";    
+    this.bCopy = new Button(this, "Copy", copyLasso);
+    this.bErase = new Button(this, "Erase", eraseLasso);
+    this.buttons.push(this.bCopy);
+    this.buttons.push(this.bErase);
+  }
+
+  positionButtons() {
+    let intersectsCanvas = canvas.intersects(this);
+    this.bCopy.setEnabled(intersectsCanvas);
+    this.bErase.setEnabled(intersectsCanvas);
+    super.positionButtons();
+  }
+
+  set(x, y, w, h) {
+    super.set(x, y, w, h);
+    this.positionButtons();
+  }
+
+  draw() {
+    push();
+    noFill();
+    if (this.selecting) {
+      stroke(0, 255, 0);
+    } else {
+      stroke(255, 0, 0);
+    }
+    strokeWeight(5);
+    beginShape();
+    for (var p=0; p<this.points.length; p++) {
+      vertex(this.points[p].x, this.points[p].y);
+    }
+    if (this.selecting) {
+      endShape();
+    } else {
+      endShape(CLOSE);
+    }
+    super.draw();
+    pop();
+  }
+
+  drawMask(canvas) {
+    canvas.pgMask.beginShape();
+    for (var p=0; p<this.points.length; p++) {
+      canvas.pgMask.vertex(this.points[p].x-canvas.min.x, this.points[p].y-canvas.min.y);
+    }
+    canvas.pgMask.endShape(CLOSE);
+  }
+
+  getMaskImage() {
+    let pgMask = createGraphics(this.w, this.h);
+    pgMask.beginShape();
+    for (var p=0; p<this.points.length; p++) {
+      pgMask.vertex(this.points[p].x-this.x, this.points[p].y-this.y);
+    }
+    pgMask.endShape(CLOSE);
+    return pgMask.get();
+  }
+
+  mousePressed(mouse) {
+    super.mousePressed(mouse);
+    this.pressed = true;
+    super.checkIfButtonsPressed(mouse);
+    if (!this.mouseover) {
+      this.selecting = true;
+      this.points = [];
+      this.min = {x: 1e8, y: 1e8};
+      this.max = {x: -1e8, y: -1e8};
+    }
+  }
+
+  mouseDragged(mouse) {
+    if (this.selecting) {
+      this.points.push({x: mouse.x, y: mouse.y});
+      this.min.x = min(this.min.x, mouse.x);
+      this.min.y = min(this.min.y, mouse.y);
+      this.max.x = max(this.max.x, mouse.x);
+      this.max.y = max(this.max.y, mouse.y);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  mouseReleased(mouse) {
+    super.mouseReleased(mouse);
+    if (this.selecting) {
+      this.set(
+        this.min.x, 
+        this.min.y, 
+        this.max.x-this.min.x, 
+        this.max.y-this.min.y
+      );
+      this.selecting = false;
+    }
   }
 
 }

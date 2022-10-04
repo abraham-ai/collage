@@ -56,6 +56,17 @@ class Canvas {
     return intersect;
   }
 
+  selectionIsTransparent(selector) {
+    let img_crop = this.getImageSelection(selector);
+    img_crop.loadPixels();
+    for (var i=0; i<img_crop.pixels.length; i+=4) {
+      if (img_crop.pixels[i+3] > 0) {
+        return false;
+      }
+    } 
+    return true;
+  }
+
   draw() {
     if (!this.pg) return;
     push();

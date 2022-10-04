@@ -14,7 +14,7 @@ var taskIds = [];
 var patchesLookup = {};
 var authToken = null;
 
-const GATEWAY_URL = "https://gateway-test.abraham.ai"  //"https://app.dev.aws.abraham.fun"
+const GATEWAY_URL = "https://gateway-test.abraham.ai"  // "https://app.dev.aws.abraham.fun"
 const MINIO_URL = "https://minio.aws.abraham.fun"
 const MINIO_BUCKET = "creations-stg"
 
@@ -79,14 +79,16 @@ function submitPrompt() {
     "mode": "generate", 
     "text_input": prompt.value,
     "sampler": "euler_ancestral",
-    "scale": 8.0,
+    "scale": 12.0,
     "steps": 50, 
     "W": selector.window_size.w,
     "H": selector.window_size.h,
+    "seed": int(1e8 * Math.random()),
     "mask_invert": true
   }
 
-  if (canvas.pg) {
+  if (canvas.pg && canvas.intersects(selector) && !canvas.selectionIsTransparent(selector)) {
+    console.log("get a crop")
     let img_crop = canvas.getImageSelection(selector);
     let img_mask = canvas.getMaskSelection(selector);
     img_crop.resize(selector.window_size.w, selector.window_size.h);
@@ -98,6 +100,9 @@ function submitPrompt() {
     config.init_image_strength = 0.0;
     config.init_image_inpaint_mode = "cv2_telea";
     config.mask_invert = true;
+  } else {
+    console.log("no crop")
+
   }
 
   const postData = {
@@ -133,8 +138,6 @@ function copySelection() {
     return;
   }
   
-  let img_cropped_masked = canvas.getMaskedImageSelection(selector); 
-    
   let newPatch = new Patch(null, true, false, false);
   newPatch.set(selector.x+30, selector.y+30, selector.w, selector.h);
   newPatch.img = canvas.getMaskedImageSelection(selector);

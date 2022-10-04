@@ -91,8 +91,8 @@ function submitPrompt() {
     let img_mask = canvas.getMaskSelection(selector);
     img_crop.resize(selector.window_size.w, selector.window_size.h);
     img_mask.resize(selector.window_size.w, selector.window_size.h);
-    img_crop.save('CROP.png')
-    img_mask.save('MASK.png')
+    // img_crop.save('CROP.png')
+    // img_mask.save('MASK.png')
     config.init_image_b64 = img_crop.canvas.toDataURL("image/png");
     config.mask_image_b64 = img_mask.canvas.toDataURL("image/png");
     config.init_image_strength = 0.0;

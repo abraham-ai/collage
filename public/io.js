@@ -14,7 +14,7 @@ var taskIds = [];
 var patchesLookup = {};
 var authToken = null;
 
-const GATEWAY_URL = "https://app.dev.aws.abraham.fun"
+const GATEWAY_URL = "https://gateway-test.abraham.ai"  //"https://app.dev.aws.abraham.fun"
 const MINIO_URL = "https://minio.aws.abraham.fun"
 const MINIO_BUCKET = "creations-stg"
 

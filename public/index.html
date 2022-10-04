@@ -17,6 +17,27 @@
       <form onsubmit="mySubmitFunction(event);return false">
         <b>Prompt</b>
         <input id="prompt" name="prompt"></input>
+        
+
+ 
+
+<div>
+  <br/>
+  <label for="samples">Number samples</label>
+  
+  <br/>
+  <input type="range" id="samples" name="samples" min="1" max="8">
+</div>
+
+<!-- <div>
+  <input type="range" id="cowbell" name="cowbell" 
+         min="0" max="100" value="90" step="10">
+         <br/> <label for="cowbell">Cowbell</label>
+</div> -->
+
+<br/>
+
+
         <input id="submittext" type="submit" value="Submit">
       </form>
       <a id="closeLink" href="#" onclick="hideCreationTool();return false;"><img id="closeicon" src="close.png"></a>
@@ -76,6 +97,18 @@
         left: 0;
         top: 0;
       }
+
+
+        
+        input {
+            margin: .4rem;
+        }
+
+        #samples, #cowbell {
+          width: 50%;
+        }
+
+
     </style>
     
   </body>

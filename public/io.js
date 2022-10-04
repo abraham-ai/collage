@@ -62,6 +62,7 @@ function runUpdate() {
       }
     }, 
     function(error) {
+      // todo: need better error handling
       console.log("there is an error", error.message);
     }
   );
@@ -136,13 +137,12 @@ function copySelection() {
     
   let newPatch = new Patch(null, true, false, false);
   newPatch.set(selector.x+30, selector.y+30, selector.w, selector.h);
-  newPatch.img = img_cropped_masked;
+  newPatch.img = canvas.getMaskedImageSelection(selector);
   newPatch.setupButtons(true, false, true);
   newPatch.positionButtons();
   patches.push(newPatch);
   selector = null;
 }
-
 
 function copyLasso() {
   if (!lasso || !canvas.pg) {
@@ -162,10 +162,10 @@ function copyLasso() {
 }
 
 function fileDropped(file) {
-  let img = createImg(file.data, successCallback = () => {
-    let newPatch = new Patch(null, true, false, false);
-    newPatch.img = img;
-    newPatch.set(mouse.x, mouse.y, img.width, img.height);
+  let newPatch = new Patch(null, true, false, false);
+  loadImage(file.data, function (newImage) {
+    newPatch.img = newImage;
+    newPatch.set(mouse.x, mouse.y, newImage.width, newImage.height);
     newPatch.setupButtons(true, false, true);
     newPatch.positionButtons();
     patches.push(newPatch);

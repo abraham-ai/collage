@@ -276,7 +276,6 @@ function mouseDragged() {
   updateMouse();
 
   if (keyIsDown(32)) {
-    console.log("draggin space")
     t2.x = mouseRaw.x;
     t2.y = mouseRaw.y;
     trans.x = anchor.x + (t2.x - t1.x);
@@ -290,7 +289,6 @@ function mouseDragged() {
     }
   }
   else if (keyIsDown(SHIFT)) {
-    console.log("upd mask")
     canvas.updateMask(mouse.x, mouse.y);
   }
   else {

@@ -81,8 +81,8 @@ function submitPrompt() {
     "sampler": "euler_ancestral",
     "scale": 12.0,
     "steps": 50, 
-    "W": selector.window_size.w,
-    "H": selector.window_size.h,
+    "width": selector.window_size.w,
+    "height": selector.window_size.h,
     "seed": int(1e8 * Math.random()),
     "mask_invert": true
   }

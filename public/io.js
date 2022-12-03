@@ -95,8 +95,8 @@ function submitPrompt() {
     img_mask.resize(selector.window_size.w, selector.window_size.h);
     // img_crop.save('CROP.png')
     // img_mask.save('MASK.png')
-    config.init_image_b64 = img_crop.canvas.toDataURL("image/png");
-    config.mask_image_b64 = img_mask.canvas.toDataURL("image/png");
+    config.init_image_data = img_crop.canvas.toDataURL("image/png");
+    config.mask_image_data = img_mask.canvas.toDataURL("image/png");
     config.init_image_strength = 0.0;
     config.init_image_inpaint_mode = "cv2_telea";
     config.mask_invert = true;
